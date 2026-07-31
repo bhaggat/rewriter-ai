@@ -1,5 +1,6 @@
 import type { ChatMessage, ProviderClient, ValidateKeyResult } from './types';
 import { ProviderError, buildRewriteMessages } from './types';
+import { friendlyStatusMessage } from '@/lib/errors';
 
 const MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
 const MODELS_URL = 'https://api.anthropic.com/v1/models';
@@ -47,9 +48,9 @@ async function chat(apiKey: string, model: string, messages: ChatMessage[]): Pro
 async function extractErrorMessage(response: Response): Promise<string> {
   try {
     const data = await response.json();
-    return data?.error?.message ?? `Claude request failed (${response.status}).`;
+    return data?.error?.message ?? friendlyStatusMessage(response.status, 'Claude');
   } catch {
-    return `Claude request failed (${response.status}).`;
+    return friendlyStatusMessage(response.status, 'Claude');
   }
 }
 

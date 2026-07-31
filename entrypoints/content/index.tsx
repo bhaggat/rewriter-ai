@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import RewriteWidget from './RewriteWidget';
 import { getFieldSelection, isEditableField } from './field-utils';
 import type { GetSelectionMessage } from '@/lib/messaging';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import './style.css';
 
 export default defineContentScript({
@@ -25,7 +26,11 @@ export default defineContentScript({
         // own icon/popover elements should intercept pointer events.
         container.style.pointerEvents = 'none';
         const root = createRoot(container);
-        root.render(<RewriteWidget hostElement={shadowHost} />);
+        root.render(
+          <ErrorBoundary className="rw-root rw-error-boundary">
+            <RewriteWidget hostElement={shadowHost} />
+          </ErrorBoundary>,
+        );
         return root;
       },
       onRemove: (root) => root?.unmount(),

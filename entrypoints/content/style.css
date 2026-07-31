@@ -215,3 +215,36 @@
 .rw-popover__disable-site:hover {
   color: var(--rw-fg);
 }
+
+.rw-error-boundary {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--rw-bg);
+  border: 1px solid var(--rw-border);
+  border-radius: 10px;
+  color: var(--rw-fg);
+  font-size: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  animation: rw-pop-in 120ms var(--rw-ease-out);
+}
+
+.rw-error-boundary button {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--rw-border);
+  border-radius: 6px;
+  background: var(--rw-surface);
+  color: var(--rw-fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.rw-error-boundary button:hover {
+  border-color: var(--rw-accent);
+}

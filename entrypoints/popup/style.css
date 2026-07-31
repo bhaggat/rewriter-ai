@@ -44,6 +44,74 @@ textarea:focus-visible,
   align-items: center;
   justify-content: center;
   color: var(--muted);
+  gap: 10px;
+}
+
+.popup--loading button {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--fg);
+}
+
+.popup--loading button:hover {
+  border-color: var(--accent);
+}
+
+.error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px;
+  padding: 8px 10px;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #f87171;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+}
+
+.error-banner__text {
+  flex: 1;
+}
+
+.error-banner__dismiss {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.error-banner__dismiss:hover {
+  opacity: 1;
+}
+
+.error-boundary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 100%;
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.error-boundary button {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--fg);
+}
+
+.error-boundary button:hover {
+  border-color: var(--accent);
 }
 
 .popout-button {

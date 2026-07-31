@@ -4,9 +4,14 @@ import { providerClients, ProviderError } from '@/lib/providers';
 import type { BackgroundRequest, BackgroundResponse } from '@/lib/messaging';
 
 async function handleRequest(message: BackgroundRequest): Promise<BackgroundResponse> {
-  const apiKeys = await apiKeysStorage.getValue();
-  const apiKey = apiKeys[message.provider];
+  let apiKeys;
+  try {
+    apiKeys = await apiKeysStorage.getValue();
+  } catch {
+    return { ok: false, error: 'Could not read the extension’s saved settings. Try reloading the extension.' };
+  }
 
+  const apiKey = apiKeys[message.provider];
   if (!apiKey) {
     return {
       ok: false,

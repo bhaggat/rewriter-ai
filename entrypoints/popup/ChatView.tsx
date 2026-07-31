@@ -14,6 +14,7 @@ import {
 import { MODELS, PROVIDER_LABELS, PROVIDERS } from '@/lib/models';
 import type { Provider } from '@/lib/providers/types';
 import type { BackgroundResponse, ChatRequest, GetSelectionMessage } from '@/lib/messaging';
+import { getErrorMessage } from '@/lib/errors';
 import { CheckIcon, CopyIcon, GearIcon, HistoryIcon, PlusIcon, PowerIcon } from '@/components/icons';
 import HistoryList from './HistoryList';
 
@@ -112,9 +113,13 @@ export default function ChatView({ apiKeys }: Props) {
   }
 
   async function handleDeleteConversation(id: string) {
-    await deleteConversation(id);
-    setConversations((prev) => prev.filter((c) => c.id !== id));
-    if (conversation?.id === id) handleNewChat();
+    try {
+      await deleteConversation(id);
+      setConversations((prev) => prev.filter((c) => c.id !== id));
+      if (conversation?.id === id) handleNewChat();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not delete this conversation. Please try again.'));
+    }
   }
 
   function handleProviderChange(next: Provider) {
@@ -133,9 +138,22 @@ export default function ChatView({ apiKeys }: Props) {
   }
 
   async function handleCopy(index: number, content: string) {
-    await navigator.clipboard.writeText(content);
-    setCopiedIndex(index);
-    setTimeout(() => setCopiedIndex((current) => (current === index ? null : current)), 1200);
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex((current) => (current === index ? null : current)), 1200);
+    } catch {
+      setError('Could not copy to clipboard. Check the browser’s clipboard permission.');
+    }
+  }
+
+  async function trySaveConversation(next: Conversation) {
+    try {
+      await saveConversation(next);
+      setConversations((prev) => upsert(prev, next));
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not save this conversation to history.'));
+    }
   }
 
   async function handleSend() {
@@ -158,8 +176,7 @@ export default function ChatView({ apiKeys }: Props) {
 
     setConversation(withUser);
     setInput('');
-    await saveConversation(withUser);
-    setConversations((prev) => upsert(prev, withUser));
+    await trySaveConversation(withUser);
 
     const request: ChatRequest = {
       type: 'CHAT_REQUEST',
@@ -182,11 +199,10 @@ export default function ChatView({ apiKeys }: Props) {
           updatedAt: Date.now(),
         };
         setConversation(withAssistant);
-        await saveConversation(withAssistant);
-        setConversations((prev) => upsert(prev, withAssistant));
+        await trySaveConversation(withAssistant);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reach the background service.');
+      setError(getErrorMessage(err, 'Failed to reach the background service.'));
     } finally {
       setSending(false);
     }
@@ -199,6 +215,8 @@ export default function ChatView({ apiKeys }: Props) {
         onSelect={handleOpenConversation}
         onDelete={handleDeleteConversation}
         onBack={() => setView('chat')}
+        error={error}
+        onDismissError={() => setError(null)}
       />
     );
   }

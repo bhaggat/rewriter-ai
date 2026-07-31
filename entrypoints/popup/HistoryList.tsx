@@ -1,15 +1,25 @@
 import type { Conversation } from '@/lib/storage';
 import { PROVIDER_LABELS } from '@/lib/models';
 import { ArrowLeftIcon, TrashIcon } from '@/components/icons';
+import ErrorBanner from '@/components/ErrorBanner';
 
 interface Props {
   conversations: Conversation[];
   onSelect: (conversation: Conversation) => void;
   onDelete: (id: string) => void;
   onBack: () => void;
+  error?: string | null;
+  onDismissError?: () => void;
 }
 
-export default function HistoryList({ conversations, onSelect, onDelete, onBack }: Props) {
+export default function HistoryList({
+  conversations,
+  onSelect,
+  onDelete,
+  onBack,
+  error,
+  onDismissError,
+}: Props) {
   const sorted = [...conversations].sort((a, b) => b.updatedAt - a.updatedAt);
 
   return (
@@ -20,6 +30,7 @@ export default function HistoryList({ conversations, onSelect, onDelete, onBack 
         </button>
         <h2>History</h2>
       </div>
+      {error && <ErrorBanner message={error} onDismiss={onDismissError} />}
       {sorted.length === 0 && <p className="history__empty">No conversations yet.</p>}
       <ul className="history__list">
         {sorted.map((c) => (

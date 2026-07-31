@@ -1,5 +1,7 @@
 import type { ChatMessage, Provider, ProviderClient, ValidateKeyResult } from './types';
 import { ProviderError, buildRewriteMessages } from './types';
+import { friendlyStatusMessage } from '@/lib/errors';
+import { PROVIDER_LABELS } from '@/lib/models';
 
 export interface OpenAICompatibleConfig {
   provider: Provider;
@@ -41,9 +43,9 @@ export function createOpenAICompatibleClient(config: OpenAICompatibleConfig): Pr
   async function extractErrorMessage(response: Response): Promise<string> {
     try {
       const data = await response.json();
-      return data?.error?.message ?? `Request failed (${response.status}).`;
+      return data?.error?.message ?? friendlyStatusMessage(response.status, PROVIDER_LABELS[config.provider]);
     } catch {
-      return `Request failed (${response.status}).`;
+      return friendlyStatusMessage(response.status, PROVIDER_LABELS[config.provider]);
     }
   }
 

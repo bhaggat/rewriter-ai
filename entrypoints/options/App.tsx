@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   apiKeysStorage,
   presetsStorage,
@@ -10,25 +10,51 @@ import {
 import { MODELS, PROVIDERS } from '@/lib/models';
 import { DEFAULT_PRESETS, type RewritePreset } from '@/lib/presets';
 import type { Provider } from '@/lib/providers/types';
+import { getErrorMessage } from '@/lib/errors';
 import ApiKeyLabel from '@/components/ApiKeyLabel';
 import ValidateKeyButton from '@/components/ValidateKeyButton';
+import ErrorBanner from '@/components/ErrorBanner';
 
 export default function App() {
   const [apiKeys, setApiKeys] = useState<ApiKeys | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [presets, setPresets] = useState<RewritePreset[] | null>(null);
   const [newSite, setNewSite] = useState('');
+  const [siteError, setSiteError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    Promise.all([apiKeysStorage.getValue(), settingsStorage.getValue(), presetsStorage.getValue()])
+      .then(([keys, loadedSettings, loadedPresets]) => {
+        setApiKeys(keys);
+        setSettings(loadedSettings);
+        setPresets(loadedPresets);
+      })
+      .catch((err) => setLoadError(getErrorMessage(err, 'Could not load your saved settings.')));
+  }, []);
+
+  function retryLoad() {
+    setLoadError(null);
+    load();
+  }
 
   useEffect(() => {
-    apiKeysStorage.getValue().then(setApiKeys);
-    settingsStorage.getValue().then(setSettings);
-    presetsStorage.getValue().then(setPresets);
-  }, []);
+    load();
+  }, [load]);
 
   function flashSaved() {
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
+  }
+
+  async function withErrorHandling(action: () => Promise<void>, fallback: string) {
+    try {
+      await action();
+    } catch (err) {
+      setError(getErrorMessage(err, fallback));
+    }
   }
 
   function editApiKey(provider: Provider, value: string) {
@@ -43,45 +69,61 @@ export default function App() {
     if (trimmed) next[provider] = trimmed;
     else delete next[provider];
     setApiKeys(next);
-    await apiKeysStorage.setValue(next);
-    flashSaved();
+    await withErrorHandling(async () => {
+      await apiKeysStorage.setValue(next);
+      flashSaved();
+    }, 'Could not save the API key. Please try again.');
   }
 
   async function updateDefaultModel(provider: Provider, model: string) {
     if (!settings) return;
     const next = { ...settings, defaultModel: { ...settings.defaultModel, [provider]: model } };
     setSettings(next);
-    await settingsStorage.setValue(next);
-    flashSaved();
+    await withErrorHandling(async () => {
+      await settingsStorage.setValue(next);
+      flashSaved();
+    }, 'Could not save the default model. Please try again.');
   }
 
   async function toggleAutoDetect(enabled: boolean) {
     if (!settings) return;
     const next = { ...settings, autoDetectEnabled: enabled };
     setSettings(next);
-    await settingsStorage.setValue(next);
-    flashSaved();
+    await withErrorHandling(async () => {
+      await settingsStorage.setValue(next);
+      flashSaved();
+    }, 'Could not save this setting. Please try again.');
   }
 
   async function addSite() {
+    setSiteError(null);
     const hostname = normalizeHostname(newSite);
-    if (!hostname || !settings || settings.siteDenylist.includes(hostname)) {
-      setNewSite('');
+    if (!settings) return;
+    if (!hostname) {
+      setSiteError('Enter a valid site, e.g. example.com.');
+      return;
+    }
+    if (settings.siteDenylist.includes(hostname)) {
+      setSiteError(`${hostname} is already excluded.`);
       return;
     }
     const next = { ...settings, siteDenylist: toggleSiteDenylist(settings.siteDenylist, hostname) };
     setSettings(next);
-    await settingsStorage.setValue(next);
-    setNewSite('');
-    flashSaved();
+    await withErrorHandling(async () => {
+      await settingsStorage.setValue(next);
+      setNewSite('');
+      flashSaved();
+    }, 'Could not save the excluded site. Please try again.');
   }
 
   async function removeSite(hostname: string) {
     if (!settings) return;
     const next = { ...settings, siteDenylist: toggleSiteDenylist(settings.siteDenylist, hostname) };
     setSettings(next);
-    await settingsStorage.setValue(next);
-    flashSaved();
+    await withErrorHandling(async () => {
+      await settingsStorage.setValue(next);
+      flashSaved();
+    }, 'Could not remove the site. Please try again.');
   }
 
   function editPreset(index: number, field: 'label' | 'instruction', value: string) {
@@ -91,23 +133,30 @@ export default function App() {
 
   async function savePresets() {
     if (!presets) return;
-    await presetsStorage.setValue(presets);
-    flashSaved();
+    await withErrorHandling(async () => {
+      await presetsStorage.setValue(presets);
+      flashSaved();
+    }, 'Could not save your presets. Please try again.');
   }
 
   async function addPreset() {
     if (!presets) return;
     const next = [...presets, { id: crypto.randomUUID(), label: '', instruction: '' }];
     setPresets(next);
-    await presetsStorage.setValue(next);
+    await withErrorHandling(
+      () => presetsStorage.setValue(next),
+      'Could not add the preset. Please try again.',
+    );
   }
 
   async function deletePreset(id: string) {
     if (!presets) return;
     const next = presets.filter((p) => p.id !== id);
     setPresets(next);
-    await presetsStorage.setValue(next);
-    flashSaved();
+    await withErrorHandling(async () => {
+      await presetsStorage.setValue(next);
+      flashSaved();
+    }, 'Could not delete the preset. Please try again.');
   }
 
   async function movePreset(index: number, direction: -1 | 1) {
@@ -117,15 +166,32 @@ export default function App() {
     const next = [...presets];
     [next[index], next[target]] = [next[target]!, next[index]!];
     setPresets(next);
-    await presetsStorage.setValue(next);
-    flashSaved();
+    await withErrorHandling(async () => {
+      await presetsStorage.setValue(next);
+      flashSaved();
+    }, 'Could not reorder presets. Please try again.');
   }
 
   async function restorePresetDefaults() {
     if (!window.confirm('Restore the default presets? This replaces your current list.')) return;
     setPresets(DEFAULT_PRESETS);
-    await presetsStorage.setValue(DEFAULT_PRESETS);
-    flashSaved();
+    await withErrorHandling(async () => {
+      await presetsStorage.setValue(DEFAULT_PRESETS);
+      flashSaved();
+    }, 'Could not restore default presets. Please try again.');
+  }
+
+  if (loadError) {
+    return (
+      <div className="options">
+        <div className="error-boundary">
+          <p>{loadError}</p>
+          <button type="button" onClick={retryLoad}>
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (!apiKeys || !settings || !presets) {
@@ -139,6 +205,7 @@ export default function App() {
         <h1>Rewriter AI Settings</h1>
       </div>
       {saved && <div className="options__saved">Saved</div>}
+      {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
       <section>
         <h2>API keys</h2>
@@ -193,13 +260,18 @@ export default function App() {
             type="text"
             placeholder="example.com"
             value={newSite}
-            onChange={(e) => setNewSite(e.target.value)}
+            onChange={(e) => {
+              setNewSite(e.target.value);
+              if (siteError) setSiteError(null);
+            }}
             onKeyDown={(e) => e.key === 'Enter' && addSite()}
+            aria-invalid={siteError ? true : undefined}
           />
           <button type="button" onClick={addSite}>
             Add
           </button>
         </div>
+        {siteError && <p className="options__field-hint">{siteError}</p>}
         {settings.siteDenylist.length === 0 && (
           <p className="options__empty">No sites excluded.</p>
         )}
@@ -268,6 +340,12 @@ export default function App() {
               onBlur={savePresets}
               rows={2}
             />
+            {(preset.label.trim() || preset.instruction.trim()) &&
+              !(preset.label.trim() && preset.instruction.trim()) && (
+                <p className="options__field-hint">
+                  Add both a label and an instruction so this preset appears in the popover.
+                </p>
+              )}
           </div>
         ))}
         <div className="options__row">

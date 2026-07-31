@@ -76,13 +76,22 @@ export default function RewriteWidget({ hostElement }: Props) {
     function handleFocusIn(event: FocusEvent) {
       if (!isEditableField(event.target)) return;
       const target = event.target;
+
+      if (stage !== 'idle') {
+        // A rewrite is in progress or its result/error is on screen for a
+        // different field. Retargeting activeFieldRef here would make
+        // "Replace" splice that rewrite into whatever the user focuses next —
+        // abandon it instead of silently retargeting.
+        if (target !== activeFieldRef.current) clearActiveField();
+        return;
+      }
+
       if (target !== activeFieldRef.current) selectionRangeRef.current = null;
       activeFieldRef.current = target;
 
       // A field can already hold text when it's focused (an existing draft, a
       // pre-filled title), so check right away instead of waiting for the next
       // keystroke to fire the debounced `input` handler below.
-      if (stage !== 'idle') return;
       if (debounceRef.current) clearTimeout(debounceRef.current);
       const text = getFieldText(target);
       if (text.trim().length >= MIN_TEXT_LENGTH) {
@@ -187,14 +196,18 @@ export default function RewriteWidget({ hostElement }: Props) {
     resetWidget();
   }
 
-  function handleDisableSite() {
+  async function handleDisableSite() {
     if (!settings) return;
     const hostname = location.hostname;
     if (!settings.siteDenylist.includes(hostname)) {
-      settingsStorage.setValue({
-        ...settings,
-        siteDenylist: [...settings.siteDenylist, hostname],
-      });
+      try {
+        await settingsStorage.setValue({
+          ...settings,
+          siteDenylist: [...settings.siteDenylist, hostname],
+        });
+      } catch {
+        // Best-effort: the widget is closing regardless, and settings still watch/retry on next load.
+      }
     }
     clearActiveField();
   }
@@ -291,9 +304,16 @@ export default function RewriteWidget({ hostElement }: Props) {
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
-                    navigator.clipboard.writeText(resultText);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 1200);
+                    navigator.clipboard
+                      .writeText(resultText)
+                      .then(() => {
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 1200);
+                      })
+                      .catch(() => {
+                        setErrorText('Could not copy to clipboard.');
+                        setStage('error');
+                      });
                   }}
                 >
                   {copied ? 'Copied!' : 'Copy'}

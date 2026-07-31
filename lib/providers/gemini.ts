@@ -1,5 +1,6 @@
 import type { ChatMessage, ProviderClient, ValidateKeyResult } from './types';
 import { ProviderError, buildRewriteMessages } from './types';
+import { friendlyStatusMessage } from '@/lib/errors';
 
 const MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -39,9 +40,9 @@ async function chat(apiKey: string, model: string, messages: ChatMessage[]): Pro
 async function extractErrorMessage(response: Response): Promise<string> {
   try {
     const data = await response.json();
-    return data?.error?.message ?? `Gemini request failed (${response.status}).`;
+    return data?.error?.message ?? friendlyStatusMessage(response.status, 'Gemini');
   } catch {
-    return `Gemini request failed (${response.status}).`;
+    return friendlyStatusMessage(response.status, 'Gemini');
   }
 }
 
