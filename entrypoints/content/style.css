@@ -1,0 +1,217 @@
+:root {
+  --rw-bg: rgba(18, 17, 24, 0.94);
+  --rw-surface: rgba(30, 28, 40, 0.9);
+  --rw-fg: #f3f2fa;
+  --rw-muted: #8f8aa3;
+  --rw-border: #322f42;
+  --rw-accent: #a78bfa;
+  --rw-accent-fg: #181622;
+  --rw-glow: 0 0 8px rgba(167, 139, 250, 0.5);
+  --rw-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rw-root,
+.rw-root * {
+  box-sizing: border-box;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+
+@keyframes rw-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.rw-icon {
+  position: absolute;
+  pointer-events: auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--rw-border);
+  background: var(--rw-bg);
+  backdrop-filter: blur(6px);
+  color: var(--rw-fg);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: rw-pop-in 120ms var(--rw-ease-out);
+  transition:
+    border-color 0.15s var(--rw-ease-out),
+    box-shadow 0.15s var(--rw-ease-out),
+    color 0.15s var(--rw-ease-out);
+}
+
+.rw-icon:hover {
+  color: var(--rw-accent);
+  border-color: var(--rw-accent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), var(--rw-glow);
+}
+
+.rw-popover {
+  position: absolute;
+  pointer-events: auto;
+  background: var(--rw-bg);
+  backdrop-filter: blur(10px);
+  color: var(--rw-fg);
+  border: 1px solid var(--rw-border);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  padding: 12px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: rw-pop-in 120ms var(--rw-ease-out);
+}
+
+.rw-popover button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.rw-popover__close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  color: var(--rw-muted);
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.rw-popover__close:hover {
+  color: var(--rw-fg);
+}
+
+.rw-popover__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.rw-popover__presets button {
+  padding: 6px 10px;
+  border: 1px solid var(--rw-border);
+  border-radius: 999px;
+  background: var(--rw-surface);
+  color: var(--rw-fg);
+  transition:
+    border-color 0.15s var(--rw-ease-out),
+    color 0.15s var(--rw-ease-out);
+}
+
+.rw-popover__presets button:hover {
+  border-color: var(--rw-accent);
+  color: var(--rw-accent);
+}
+
+.rw-popover__custom {
+  display: flex;
+  gap: 6px;
+}
+
+.rw-popover__custom input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--rw-border);
+  border-radius: 8px;
+  background: var(--rw-surface);
+  color: var(--rw-fg);
+  font: inherit;
+}
+
+.rw-popover__custom button {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--rw-accent);
+  color: var(--rw-accent-fg);
+  font-weight: 600;
+  transition: box-shadow 0.15s var(--rw-ease-out);
+}
+
+.rw-popover__custom button:hover {
+  box-shadow: var(--rw-glow);
+}
+
+.rw-popover__loading {
+  color: var(--rw-muted);
+  padding: 8px 0;
+  margin-top: 12px;
+}
+
+.rw-popover__result {
+  max-height: 160px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 8px;
+  background: var(--rw-surface);
+  border: 1px solid var(--rw-border);
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.rw-popover__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.rw-popover__actions button {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--rw-border);
+  border-radius: 8px;
+  background: var(--rw-surface);
+  color: var(--rw-fg);
+  transition: box-shadow 0.15s var(--rw-ease-out);
+}
+
+.rw-popover__actions button:first-child {
+  background: var(--rw-accent);
+  color: var(--rw-accent-fg);
+  border-color: var(--rw-accent);
+  font-weight: 600;
+}
+
+.rw-popover__actions button:hover {
+  box-shadow: var(--rw-glow);
+}
+
+.rw-popover__error {
+  color: #f87171;
+  margin-top: 12px;
+}
+
+.rw-popover__disable-site {
+  border: none;
+  background: none;
+  color: var(--rw-muted);
+  font-size: 11px;
+  text-decoration: underline;
+  padding: 0;
+  align-self: flex-start;
+}
+
+.rw-popover__disable-site:hover {
+  color: var(--rw-fg);
+}

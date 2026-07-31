@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy Policy — Rewriter AI</title>
+<meta name="description" content="Privacy policy for the Rewriter AI Chrome extension." />
+<link rel="icon" href="site-assets/icon-128.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #121118;
+    --bg-deep: #0b0a0f;
+    --surface: #17151f;
+    --surface-raised: #1d1b27;
+    --border: #2b2937;
+    --border-strong: #3a3749;
+    --fg: #f3f2fa;
+    --fg-muted: #c7c3d9;
+    --muted: #8f8aa3;
+    --accent: #a78bfa;
+    --accent-ink: #ded4ff;
+    --good: #6fdba0;
+    --good-bg: rgba(111,219,160,0.12);
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent-ink); text-decoration-color: color-mix(in srgb, var(--accent-ink) 40%, transparent); }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+
+  .nav {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+  }
+  .nav__row { max-width: 700px; margin: 0 auto; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; }
+  .nav__mark { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(155deg,#4d8bff,#1d4ed8); flex-shrink: 0; overflow: hidden; }
+  .nav__mark img { width: 100%; height: 100%; display: block; }
+  .nav a.back { color: var(--muted); margin-left: auto; font-weight: 400; }
+  .nav a.back:hover { color: var(--fg); }
+
+  .page { max-width: 700px; margin: 0 auto; padding: 48px 24px 88px; }
+
+  h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 6px; text-wrap: balance; }
+  .meta { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin: 0 0 30px; }
+  p.lede { color: var(--fg-muted); font-size: 15.5px; margin: 0 0 8px; }
+
+  h2 { font-size: 18px; font-weight: 700; margin: 44px 0 12px; letter-spacing: -0.005em; }
+  h2 .num { color: var(--accent); font-family: var(--mono); font-weight: 600; font-size: 13px; margin-right: 8px; }
+  p { margin: 0 0 14px; }
+  strong { font-weight: 650; }
+
+  .callout {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin: 28px 0 8px;
+  }
+  .callout__title { font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 16px; }
+  .answers { display: grid; gap: 12px; }
+  .answer { display: flex; gap: 12px; align-items: baseline; }
+  .answer__pill {
+    flex-shrink: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 100px; background: var(--good-bg); color: var(--good); min-width: 34px; text-align: center;
+  }
+  .answer__q { font-size: 14.5px; }
+  .answer__q b { display: block; font-weight: 600; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 4px 0 20px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+  td.mono, th.mono { font-family: var(--mono); font-size: 12.5px; }
+
+  ul { padding-left: 20px; margin: 0 0 14px; }
+  li { margin-bottom: 6px; }
+
+  hr.divider { border: none; border-top: 1px solid var(--border); margin: 48px 0 0; }
+  footer.note { margin-top: 24px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+  <div class="nav">
+    <div class="nav__row">
+      <span class="nav__mark"><img src="site-assets/icon.svg" alt="" /></span> Rewriter AI
+      <a class="back" href="index.html">← Back to site</a>
+    </div>
+  </div>
+
+  <div class="page">
+    <h1>Privacy Policy</h1>
+    <p class="meta">Effective 2026-07-31 · Version 1.0.0</p>
+
+    <p class="lede">Rewriter AI lets you chat with, and rewrite text using, an AI provider of your choice — OpenAI, Gemini, Claude, Grok, Groq, Mistral, or OpenRouter — using an API key you supply. This page explains exactly what the extension does with your data.</p>
+
+    <div class="callout">
+      <p class="callout__title">At a glance</p>
+      <div class="answers">
+        <div class="answer">
+          <span class="answer__pill">No</span>
+          <span class="answer__q"><b>Does Rewriter AI have a backend server?</b>No. It's a pure client — there is nothing to send your data to, and no server to breach.</span>
+        </div>
+        <div class="answer">
+          <span class="answer__pill">No</span>
+          <span class="answer__q"><b>Do the developers ever see your text or API keys?</b>No. Both stay on your device, or travel directly from your browser to the AI provider you configured.</span>
+        </div>
+        <div class="answer">
+          <span class="answer__pill">No</span>
+          <span class="answer__q"><b>Is any data sold or shared with advertisers?</b>No. There is no analytics, tracking, or advertising code in this extension.</span>
+        </div>
+        <div class="answer">
+          <span class="answer__pill">Local</span>
+          <span class="answer__q"><b>Where are API keys and chat history stored?</b>In your browser's local extension storage, on your device only. They are never synced to a Google account or any server.</span>
+        </div>
+      </div>
+    </div>
+
+    <h2><span class="num">01</span>What the extension does</h2>
+    <p>Rewriter AI adds two features to your browser:</p>
+    <ul>
+      <li><strong>Inline rewrite.</strong> When you focus a text field on a webpage, a small icon appears. Clicking it lets you rewrite the field's text using a preset or custom instruction.</li>
+      <li><strong>Chat popup.</strong> The extension's toolbar icon opens a chat window where you can converse directly with your chosen AI provider.</li>
+    </ul>
+    <p>Both features send text to the AI provider you've configured, using an API key you provide, and display the response back to you. That's the extent of what the extension does.</p>
+
+    <h2><span class="num">02</span>Data the extension accesses, and why</h2>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Permission</th><th>What it's for</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">storage</td><td>Saves your API keys, settings, presets, and chat history locally in your browser, so they persist between sessions.</td></tr>
+        <tr><td class="mono">activeTab</td><td>Lets the keyboard shortcut and toolbar popup act on the page you're currently viewing.</td></tr>
+        <tr><td class="mono">Host access to AI provider APIs</td><td>Lets the extension call the API of whichever provider you've added a key for (see table below), directly from your browser.</td></tr>
+        <tr><td class="mono">Content script on all sites</td><td>Detects when you focus an editable text field, so the rewrite icon can appear. It reads the text in the field you're actively focused on only — never the rest of the page — and only when the feature is turned on for that site.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2><span class="num">03</span>Where your data goes</h2>
+    <p>When you rewrite text or send a chat message, the text and your API key for that provider are sent directly from your browser to the provider's own API. Rewriter AI does not relay, log, or store this traffic anywhere else. Each provider's own privacy policy governs how they handle that request:</p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Provider</th><th>Privacy policy</th></tr></thead>
+      <tbody>
+        <tr><td>OpenAI (ChatGPT)</td><td><a href="https://openai.com/policies/privacy-policy/" target="_blank" rel="noopener noreferrer">openai.com/policies/privacy-policy</a></td></tr>
+        <tr><td>Google (Gemini)</td><td><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">policies.google.com/privacy</a></td></tr>
+        <tr><td>Anthropic (Claude)</td><td><a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer">anthropic.com/legal/privacy</a></td></tr>
+        <tr><td>xAI (Grok)</td><td><a href="https://x.ai/legal/privacy-policy" target="_blank" rel="noopener noreferrer">x.ai/legal/privacy-policy</a></td></tr>
+        <tr><td>OpenRouter</td><td><a href="https://openrouter.ai/privacy" target="_blank" rel="noopener noreferrer">openrouter.ai/privacy</a></td></tr>
+        <tr><td>Groq</td><td><a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer">groq.com/privacy-policy</a></td></tr>
+        <tr><td>Mistral</td><td><a href="https://mistral.ai/terms/#privacy-policy" target="_blank" rel="noopener noreferrer">mistral.ai/terms</a></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>Rewriter AI only contacts the provider(s) you've personally added an API key for. It never contacts a provider you haven't configured.</p>
+
+    <h2><span class="num">04</span>What we don't do</h2>
+    <ul>
+      <li>We don't operate any server. There is no backend to send your data to.</li>
+      <li>We don't collect analytics, telemetry, or crash reports.</li>
+      <li>We don't use cookies or any cross-site tracking.</li>
+      <li>We don't sell, rent, or share your data with third parties, advertisers, or data brokers.</li>
+      <li>We don't read or transmit the content of any webpage other than the specific text field you're actively editing, and only while the inline-rewrite feature is on.</li>
+    </ul>
+
+    <h2><span class="num">05</span>Your control over your data</h2>
+    <p>Everything Rewriter AI stores lives in your browser's local extension storage:</p>
+    <ul>
+      <li><strong>Delete it any time</strong> by removing the extension, or by clearing individual API keys, presets, or chat history from the Settings page.</li>
+      <li><strong>Turn off inline rewrite</strong> globally, or exclude specific sites, from the Settings page.</li>
+      <li><strong>Nothing leaves your device</strong> unless you actively trigger a rewrite or chat message.</li>
+    </ul>
+
+    <h2><span class="num">06</span>Children's privacy</h2>
+    <p>Rewriter AI is not directed at children under 13 and does not knowingly collect information from them.</p>
+
+    <h2><span class="num">07</span>Changes to this policy</h2>
+    <p>If this policy changes, the "Effective" date at the top of this page will be updated. Material changes will also be noted in the extension's Chrome Web Store listing.</p>
+
+    <h2><span class="num">08</span>Contact</h2>
+    <p>Questions about this policy or the extension can be sent to <a href="mailto:YOUR-CONTACT-EMAIL">YOUR-CONTACT-EMAIL</a>, or opened as an issue on <a href="https://github.com/bhaggat/rewriter-ai/issues" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+
+    <hr class="divider" />
+    <footer class="note">Rewriter AI — this policy covers the browser extension only, not the third-party AI providers it connects to on your behalf.</footer>
+  </div>
+</body>
+</html>
