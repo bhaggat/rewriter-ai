@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 
 export function isMacPlatform(): boolean {
   if (typeof navigator !== 'undefined') {
-    const platform =
-      (navigator as any).userAgentData?.platform || navigator.platform || navigator.userAgent || '';
+    const nav = navigator as unknown as { userAgentData?: { platform?: string } };
+    const platform = nav.userAgentData?.platform || navigator.platform || navigator.userAgent || '';
     return /mac/i.test(platform);
   }
   return false;

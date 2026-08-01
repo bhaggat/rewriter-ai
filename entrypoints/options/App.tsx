@@ -77,6 +77,14 @@ export default function App() {
     setApiKeys(next);
     await withErrorHandling(async () => {
       await apiKeysStorage.setValue(next);
+      if (settings && (!next[settings.defaultProvider] || !next[settings.defaultProvider]?.trim())) {
+        const available = PROVIDERS.find((p) => Boolean(next[p]?.trim()));
+        if (available) {
+          const nextSettings = { ...settings, defaultProvider: available };
+          setSettings(nextSettings);
+          await settingsStorage.setValue(nextSettings);
+        }
+      }
       flashSaved();
     }, 'Could not save the API key. Please try again.');
   }

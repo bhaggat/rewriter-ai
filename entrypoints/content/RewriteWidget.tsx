@@ -1,5 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { lastWritingStyleStorage, presetsStorage, settingsStorage, type Settings } from '@/lib/storage';
+import {
+  lastWritingStyleStorage,
+  presetsStorage,
+  settingsStorage,
+  type Settings,
+} from '@/lib/storage';
 import type { RewritePreset } from '@/lib/presets';
 import {
   clamp,
@@ -87,11 +91,9 @@ export default function RewriteWidget({ hostElement }: Props) {
   const isExcluded = Boolean(settings?.siteDenylist.includes(location.hostname));
   const autoDetectEnabled = Boolean(settings?.autoDetectEnabled && !isExcluded);
 
-  // ─── Field tracking (for hover/typing icon) ───────────────────────────────
+  // ─── Field tracking (for hover/typing icon and shortcut target) ───────────
 
   useEffect(() => {
-    if (!autoDetectEnabled) return;
-
     function handleFocusIn(event: FocusEvent) {
       const target = findEditableField(event.target);
       if (!target) return;
@@ -104,6 +106,8 @@ export default function RewriteWidget({ hostElement }: Props) {
       if (target !== activeFieldRef.current) selectionRangeRef.current = null;
       activeFieldRef.current = target;
       lastFieldRef.current = target;
+
+      if (!autoDetectEnabled) return;
 
       if (debounceRef.current) clearTimeout(debounceRef.current);
       const text = getFieldText(target);
@@ -136,7 +140,8 @@ export default function RewriteWidget({ hostElement }: Props) {
       if (!target) return;
       activeFieldRef.current = target;
       lastFieldRef.current = target;
-      if (stage !== 'idle') return;
+
+      if (!autoDetectEnabled || stage !== 'idle') return;
 
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
@@ -158,6 +163,17 @@ export default function RewriteWidget({ hostElement }: Props) {
       }
     }
 
+    function handleSelectionChange() {
+      const deepActive = getDeepActiveElement();
+      const target = findEditableField(deepActive) || findEditableField(document.activeElement);
+      if (target) {
+        activeFieldRef.current = target;
+        lastFieldRef.current = target;
+        const sel = getFieldSelection(target);
+        if (sel) selectionRangeRef.current = sel;
+      }
+    }
+
     function handleReposition() {
       if (activeFieldRef.current && (showIcon || stage !== 'idle')) {
         setRect(activeFieldRef.current.getBoundingClientRect());
@@ -168,6 +184,7 @@ export default function RewriteWidget({ hostElement }: Props) {
     document.addEventListener('focusout', handleFocusOut, true);
     document.addEventListener('input', handleInput, true);
     document.addEventListener('pointerdown', handleFieldPointerDown, true);
+    document.addEventListener('selectionchange', handleSelectionChange, true);
     window.addEventListener('scroll', handleReposition, true);
     window.addEventListener('resize', handleReposition);
 
@@ -176,6 +193,7 @@ export default function RewriteWidget({ hostElement }: Props) {
       document.removeEventListener('focusout', handleFocusOut, true);
       document.removeEventListener('input', handleInput, true);
       document.removeEventListener('pointerdown', handleFieldPointerDown, true);
+      document.removeEventListener('selectionchange', handleSelectionChange, true);
       window.removeEventListener('scroll', handleReposition, true);
       window.removeEventListener('resize', handleReposition);
     };
@@ -275,7 +293,7 @@ export default function RewriteWidget({ hostElement }: Props) {
     if (isExcluded) return;
 
     const deepActive = getDeepActiveElement();
-    let targetField =
+    const targetField =
       findEditableField(deepActive) ||
       findEditableField(document.activeElement) ||
       activeFieldRef.current ||
@@ -323,13 +341,28 @@ export default function RewriteWidget({ hostElement }: Props) {
     }
 
     if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
-      const activeEl = getDeepActiveElement() || document.activeElement;
-      if (activeEl && activeEl instanceof HTMLElement) {
-        targetRect = activeEl.getBoundingClientRect();
+      const winSel = window.getSelection();
+      if (winSel && winSel.rangeCount > 0) {
+        const r = winSel.getRangeAt(0).getBoundingClientRect();
+        if (r.width > 0 || r.height > 0) targetRect = r;
       }
     }
 
-    if (!targetRect) return;
+    if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
+      const activeEl = getDeepActiveElement() || document.activeElement;
+      if (activeEl && activeEl instanceof HTMLElement) {
+        const r = activeEl.getBoundingClientRect();
+        if (r.width > 0 || r.height > 0) targetRect = r;
+      }
+    }
+
+    if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
+      const w = POPOVER_WIDTH;
+      const h = 40;
+      const left = Math.max(10, (window.innerWidth - w) / 2);
+      const top = Math.max(10, window.innerHeight / 3);
+      targetRect = new DOMRect(left, top, w, h);
+    }
 
     setRect(targetRect);
     setShowIcon(true);
@@ -355,7 +388,15 @@ export default function RewriteWidget({ hostElement }: Props) {
 
       if (matchesCustom || isFallbackR) {
         const deepActive = getDeepActiveElement();
-        if (deepActive && (isEditableField(deepActive) || findEditableField(deepActive))) {
+        const winSel = window.getSelection();
+        const hasSelection = Boolean(winSel && !winSel.isCollapsed && winSel.toString().trim().length > 0);
+        const editableTarget =
+          findEditableField(deepActive) ||
+          findEditableField(document.activeElement) ||
+          activeFieldRef.current ||
+          lastFieldRef.current;
+
+        if (editableTarget || hasSelection || isEditableField(deepActive) || isEditableField(document.activeElement)) {
           e.preventDefault();
           e.stopPropagation();
           triggerRewrite();
@@ -383,9 +424,14 @@ export default function RewriteWidget({ hostElement }: Props) {
 
       // ── INSERT_TEXT ──────────────────────────────────────────────────
       if (message.type === 'INSERT_TEXT') {
-        const field = lastFieldRef.current || activeFieldRef.current;
+        const deepActive = getDeepActiveElement();
+        const field =
+          lastFieldRef.current ||
+          activeFieldRef.current ||
+          findEditableField(deepActive) ||
+          findEditableField(document.activeElement);
         if (field) {
-          insertText(field, (message as InsertTextMessage).text, null);
+          insertText(field, (message as InsertTextMessage).text, selectionRangeRef.current);
         } else if (selectionRangeRef.current?.range) {
           const range = selectionRangeRef.current.range;
           if (range.startContainer.isConnected && range.endContainer.isConnected) {
@@ -402,8 +448,13 @@ export default function RewriteWidget({ hostElement }: Props) {
 
       // ── HAS_EDITABLE_FIELD ───────────────────────────────────────────
       if (message.type === 'HAS_EDITABLE_FIELD') {
-        const field = lastFieldRef.current || activeFieldRef.current;
-        return Boolean(field || isEditableField(document.activeElement)) as unknown as void;
+        const deepActive = getDeepActiveElement();
+        const field =
+          lastFieldRef.current ||
+          activeFieldRef.current ||
+          findEditableField(deepActive) ||
+          findEditableField(document.activeElement);
+        return Boolean(field) as unknown as void;
       }
     }
 

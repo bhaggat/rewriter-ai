@@ -68,6 +68,16 @@ export function hasAnyApiKey(keys: ApiKeys): boolean {
   return PROVIDERS.some((provider) => Boolean(keys[provider]));
 }
 
+export function getEffectiveProvider(
+  settings: Settings | null,
+  apiKeys: ApiKeys | null,
+): Provider {
+  const available = PROVIDERS.filter((p) => Boolean(apiKeys?.[p]?.trim()));
+  const preferred = settings?.defaultProvider ?? 'openai';
+  if (available.length === 0) return preferred;
+  return available.includes(preferred) ? preferred : available[0]!;
+}
+
 export function isSiteExcluded(denylist: string[], hostname: string): boolean {
   return denylist.includes(hostname);
 }

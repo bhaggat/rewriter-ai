@@ -1,7 +1,7 @@
 import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
 import { createRoot } from 'react-dom/client';
 import RewriteWidget from './RewriteWidget';
-import { getFieldSelection, getFieldText, isEditableField } from './field-utils';
+import { findEditableField, getDeepActiveElement, getFieldSelection, getFieldText } from './field-utils';
 import type { GetSelectionMessage } from '@/lib/messaging';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import './style.css';
@@ -12,11 +12,12 @@ export default defineContentScript({
   async main(ctx) {
     browser.runtime.onMessage.addListener((message: GetSelectionMessage, _sender, sendResponse) => {
       if (message.type !== 'GET_SELECTION') return;
-      const active = document.activeElement;
+      const active = getDeepActiveElement() || document.activeElement;
       let text = '';
-      if (isEditableField(active)) {
-        const fieldSelection = getFieldSelection(active);
-        text = fieldSelection?.text || getFieldText(active) || '';
+      const editable = findEditableField(active);
+      if (editable) {
+        const fieldSelection = getFieldSelection(editable);
+        text = fieldSelection?.text || getFieldText(editable) || '';
       }
       if (!text.trim()) {
         text = window.getSelection()?.toString() || '';

@@ -69,6 +69,10 @@ export default function RewriteView({ apiKeys }: Props) {
       setProvider(initialProvider);
       setModel(loaded.defaultModel[initialProvider] || MODELS[initialProvider][0]!.id);
 
+      if (initialProvider !== loaded.defaultProvider) {
+        settingsStorage.setValue({ ...loaded, defaultProvider: initialProvider }).catch(() => {});
+      }
+
       const styleToUse = savedLastStyle || resolveInstruction(loaded, loadedPresets) || '';
       if (styleToUse) {
         setInstruction(styleToUse);
@@ -138,7 +142,14 @@ export default function RewriteView({ apiKeys }: Props) {
   // ── Provider/model change ─────────────────────────────────────────────────
   function handleProviderChange(next: Provider) {
     setProvider(next);
-    setModel(settings?.defaultModel?.[next] ?? MODELS[next][0]!.id);
+    const nextModel = settings?.defaultModel?.[next] ?? MODELS[next][0]!.id;
+    setModel(nextModel);
+    if (settings) {
+      settingsStorage.setValue({
+        ...settings,
+        defaultProvider: next,
+      }).catch(() => {});
+    }
   }
 
   // ── Rewrite ───────────────────────────────────────────────────────────────

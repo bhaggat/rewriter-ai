@@ -54,6 +54,9 @@ export default function ChatView({ apiKeys }: Props) {
         : (availableProviders[0] ?? loaded.defaultProvider);
       setProvider(initialProvider);
       setModel(loaded.defaultModel[initialProvider] || MODELS[initialProvider][0]!.id);
+      if (initialProvider !== loaded.defaultProvider) {
+        settingsStorage.setValue({ ...loaded, defaultProvider: initialProvider }).catch(() => {});
+      }
     });
 
     const unwatchSettings = settingsStorage.watch((loaded) => {
