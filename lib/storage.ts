@@ -10,6 +10,11 @@ export interface Settings {
   siteDenylist: string[];
   defaultProvider: Provider;
   defaultModel: Record<Provider, string>;
+  /** Preset ID or free-text instruction applied automatically when the shortcut fires.
+   *  Empty string means "show preset picker". */
+  defaultWritingStyle: string;
+  /** Whether defaultWritingStyle is a preset ID (true) or a raw instruction string (false). */
+  defaultWritingStyleIsPreset: boolean;
 }
 
 export interface StoredMessage {
@@ -38,6 +43,8 @@ export const settingsStorage = storage.defineItem<Settings>('local:settings', {
     siteDenylist: [],
     defaultProvider: 'openai',
     defaultModel: { ...DEFAULT_MODEL },
+    defaultWritingStyle: '',
+    defaultWritingStyleIsPreset: true,
   },
 });
 
@@ -51,6 +58,10 @@ export const popoutWindowIdStorage = storage.defineItem<number | null>('local:po
 
 export const presetsStorage = storage.defineItem<RewritePreset[]>('local:presets', {
   fallback: DEFAULT_PRESETS,
+});
+
+export const lastWritingStyleStorage = storage.defineItem<string>('local:lastWritingStyle', {
+  fallback: '',
 });
 
 export function hasAnyApiKey(keys: ApiKeys): boolean {

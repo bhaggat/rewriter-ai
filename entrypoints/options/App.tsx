@@ -14,8 +14,12 @@ import { getErrorMessage } from '@/lib/errors';
 import ApiKeyLabel from '@/components/ApiKeyLabel';
 import ValidateKeyButton from '@/components/ValidateKeyButton';
 import ErrorBanner from '@/components/ErrorBanner';
+import { HelpIcon, InfoIcon } from '@/components/icons';
+import AboutModal from '@/components/AboutModal';
+import { useShortcutInfo } from '@/lib/shortcuts';
 
 export default function App() {
+  const shortcutInfo = useShortcutInfo();
   const [apiKeys, setApiKeys] = useState<ApiKeys | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [presets, setPresets] = useState<RewritePreset[] | null>(null);
@@ -24,6 +28,8 @@ export default function App() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [showAboutModal, setShowAboutModal] = useState(false);
+
 
   const load = useCallback(() => {
     Promise.all([apiKeysStorage.getValue(), settingsStorage.getValue(), presetsStorage.getValue()])
@@ -93,6 +99,16 @@ export default function App() {
       await settingsStorage.setValue(next);
       flashSaved();
     }, 'Could not save this setting. Please try again.');
+  }
+
+  async function updateDefaultWritingStyle(value: string, isPreset: boolean) {
+    if (!settings) return;
+    const next = { ...settings, defaultWritingStyle: value, defaultWritingStyleIsPreset: isPreset };
+    setSettings(next);
+    await withErrorHandling(async () => {
+      await settingsStorage.setValue(next);
+      flashSaved();
+    }, 'Could not save the default writing style. Please try again.');
   }
 
   async function addSite() {
@@ -201,8 +217,19 @@ export default function App() {
   return (
     <div className="options">
       <div className="options__header">
-        <img src="/icon/32.png" alt="" className="options__logo" />
-        <h1>Rewriter AI Settings</h1>
+        <div className="options__header-title">
+          <img src="/icon/32.png" alt="" className="options__logo" />
+          <h1>Rewriter AI Settings</h1>
+        </div>
+        <button
+          type="button"
+          className="options__info-btn"
+          onClick={() => setShowAboutModal(true)}
+          title="About Rewriter AI & Features"
+          aria-label="About Rewriter AI & Features"
+        >
+          <HelpIcon size={16} />
+        </button>
       </div>
       {saved && <div className="options__saved">Saved</div>}
       {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
@@ -241,6 +268,60 @@ export default function App() {
       </section>
 
       <section>
+        <h2>Default writing style</h2>
+        <p className="options__hint">
+          Choose a tone to auto-apply when you trigger the keyboard shortcut
+          — so you skip the picker and jump straight to the result.
+        </p>
+        {presets && (
+          <>
+            <div className="options__row">
+              <select
+                value={
+                  settings.defaultWritingStyle && settings.defaultWritingStyleIsPreset
+                    ? settings.defaultWritingStyle
+                    : settings.defaultWritingStyle
+                    ? '__custom__'
+                    : ''
+                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    updateDefaultWritingStyle('', true);
+                  } else if (val === '__custom__') {
+                    updateDefaultWritingStyle('', false);
+                  } else {
+                    updateDefaultWritingStyle(val, true);
+                  }
+                }}
+                aria-label="Default writing style"
+              >
+                <option value="">None (always show picker)</option>
+                {presets
+                  .filter((p) => p.label.trim() && p.instruction.trim())
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                <option value="__custom__">Custom instruction…</option>
+              </select>
+            </div>
+            {/* Show textarea when custom instruction is selected */}
+            {settings.defaultWritingStyle && !settings.defaultWritingStyleIsPreset && (
+              <textarea
+                className="options__custom-style-input"
+                rows={2}
+                placeholder="e.g. Rewrite this as a concise PR description in bullet points"
+                value={settings.defaultWritingStyle}
+                onChange={(e) => updateDefaultWritingStyle(e.target.value, false)}
+              />
+            )}
+          </>
+        )}
+      </section>
+
+      <section>
         <h2>Inline rewrite</h2>
         <label className="switch">
           <input
@@ -253,6 +334,32 @@ export default function App() {
           </span>
           <span>Show a rewrite icon and shortcut on text fields across the web</span>
         </label>
+
+        <div className="options__shortcut-hint">
+          <div className="options__shortcut-hint-header">
+            <span className="options__shortcut-hint-label">Keyboard shortcut</span>
+            <button
+              type="button"
+              className="options__shortcut-change-btn"
+              onClick={shortcutInfo.openShortcutsPage}
+            >
+              Change Shortcut
+            </button>
+          </div>
+          <div className="options__shortcut-keys">
+            {shortcutInfo.keys.map((k, i) => (
+              <span key={i} className="options__shortcut-key-item">
+                {i > 0 && <span className="options__shortcut-plus">+</span>}
+                <kbd>{k}</kbd>
+              </span>
+            ))}
+          </div>
+          <p className="options__shortcut-note">
+            Focuses the current text field and opens the rewrite picker (or auto-applies your
+            default writing style if one is set above).
+            Click "Change Shortcut" above to customize this key combination in your browser settings.
+          </p>
+        </div>
 
         <h3>Excluded sites</h3>
         <div className="options__row">
@@ -357,6 +464,51 @@ export default function App() {
           </button>
         </div>
       </section>
+
+      <section className="options__about-section">
+        <div className="options__about-header">
+          <h2>About Rewriter AI & Features</h2>
+          <button
+            type="button"
+            className="options__about-btn"
+            onClick={() => setShowAboutModal(true)}
+          >
+            <InfoIcon size={14} /> Open Guide
+          </button>
+        </div>
+        <p className="options__hint">
+          Rewriter AI is built to make AI-powered writing, tone rewriting, and text transformation fast and accessible on any site.
+        </p>
+
+        <div className="options__about-grid">
+          <div className="options__about-card">
+            <div className="options__about-card-title">⚡ Inline Rewriter & Shortcut</div>
+            <p>
+              Select text on any webpage or focus input fields and press <kbd>Option+Shift+R</kbd> (Mac) / <kbd>Alt+Shift+R</kbd> (Win) to trigger instant AI rewrite presets.
+            </p>
+          </div>
+          <div className="options__about-card">
+            <div className="options__about-card-title">🤖 Multi-Provider Support</div>
+            <p>
+              Connect OpenAI, Anthropic Claude, Google Gemini, DeepSeek, or Groq with your own API keys.
+            </p>
+          </div>
+          <div className="options__about-card">
+            <div className="options__about-card-title">🎯 Presets & Styles</div>
+            <p>
+              Customize tone presets and pick default writing styles for automatic 1-click execution.
+            </p>
+          </div>
+          <div className="options__about-card">
+            <div className="options__about-card-title">💬 Side-by-Side Chat</div>
+            <p>
+              Open the extension popup anytime for interactive chat, drafting long content, and Q&A.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
     </div>
   );
 }

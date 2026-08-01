@@ -3,508 +3,1111 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Rewriter AI — Rewrite anywhere. Chat anywhere. Your API keys.</title>
-<meta name="description" content="A Chrome extension that rewrites text inline on any site and chats with OpenAI, Gemini, Claude, Grok, Groq, Mistral, or OpenRouter — using your own API keys. No backend, no data collection." />
+<title>Rewriter AI — Rewrite Anywhere. Chat Anywhere. Your API Keys.</title>
+<meta name="description" content="A privacy-first Chrome extension that rewrites text inline on any website and chats with OpenAI, Gemini, Claude, Grok, Groq, Mistral, or OpenRouter using your own API keys. No backend, 100% local." />
+<meta property="og:title" content="Rewriter AI — Rewrite Anywhere. Chat Anywhere. Your API Keys." />
+<meta property="og:description" content="Inline AI writing assistant & popup chat for Chrome. Powered by your own API keys with 0 backend servers." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://rewriter.bhaggat.in/" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Rewriter AI — Privacy-First AI Browser Extension" />
+
 <link rel="icon" href="site-assets/icon-128.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
 <style>
   :root {
     color-scheme: dark;
-    --bg: #121118;
-    --bg-deep: #0b0a0f;
-    --surface: #17151f;
-    --surface-raised: #1d1b27;
-    --border: #2b2937;
-    --border-strong: #3a3749;
-    --fg: #f3f2fa;
-    --fg-muted: #c7c3d9;
-    --muted: #8f8aa3;
-    --accent: #a78bfa;
-    --accent-strong: #8b5cf6;
-    --accent-ink: #ded4ff;
-    --blue: #4d8bff;
-    --blue-deep: #1d4ed8;
-    --mono: "IBM Plex Mono", ui-monospace, monospace;
-    --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --display: "Fraunces", Georgia, serif;
+    --bg-dark: #07060b;
+    --bg-surface: #0e0c16;
+    --bg-card: #151221;
+    --bg-card-hover: #1c182c;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-glow: rgba(139, 92, 246, 0.35);
+    
+    --fg-main: #f5f3ff;
+    --fg-muted: #a7a2c1;
+    --fg-dim: #736d8e;
+    
+    --primary: #8b5cf6;
+    --primary-light: #a78bfa;
+    --primary-glow: rgba(139, 92, 246, 0.25);
+    --accent-blue: #38bdf8;
+    --accent-emerald: #10b981;
+    --accent-pink: #f43f5e;
+    --accent-amber: #f59e0b;
+    
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
   }
 
-  * { box-sizing: border-box; }
-  html, body { margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
   body {
-    background: var(--bg);
-    background-image: radial-gradient(circle at 15% -10%, rgba(167,139,250,0.16), transparent 45%),
-                       radial-gradient(circle at 90% 10%, rgba(77,139,255,0.10), transparent 40%);
-    color: var(--fg);
-    font-family: var(--sans);
+    background-color: var(--bg-dark);
+    color: var(--fg-main);
+    font-family: var(--font-sans);
     line-height: 1.6;
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
   }
-  ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
-  a { color: inherit; text-decoration: none; }
-  img { max-width: 100%; display: block; }
-  section { position: relative; }
 
-  a:focus-visible, button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 3px;
-    border-radius: 4px;
+  ::selection {
+    background: var(--primary-glow);
+    color: var(--primary-light);
+  }
+
+  /* Background Effects */
+  .bg-glow-1 {
+    position: absolute;
+    top: -150px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.18) 0%, rgba(56, 189, 248, 0.08) 50%, transparent 80%);
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .bg-glow-2 {
+    position: absolute;
+    top: 1400px;
+    right: -200px;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(139, 92, 246, 0.06) 60%, transparent 80%);
+    filter: blur(100px);
+    pointer-events: none;
+    z-index: 0;
   }
 
   .wrap {
-    max-width: 1080px;
+    max-width: 1160px;
     margin: 0 auto;
     padding: 0 24px;
+    position: relative;
+    z-index: 1;
   }
 
-  /* Nav */
-  .nav {
+  /* Navigation Bar */
+  .navbar {
     position: sticky;
     top: 0;
-    z-index: 20;
-    backdrop-filter: blur(14px);
-    background: color-mix(in srgb, var(--bg) 78%, transparent);
-    border-bottom: 1px solid var(--border);
+    z-index: 100;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(7, 6, 11, 0.75);
+    border-bottom: 1px solid var(--border-subtle);
   }
-  .nav__row {
+  .nav-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 24px;
-    max-width: 1080px;
-    margin: 0 auto;
+    height: 72px;
   }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
-  .brand__mark {
-    width: 26px; height: 26px; border-radius: 7px;
-    background: linear-gradient(155deg, var(--blue), var(--blue-deep));
-    flex-shrink: 0;
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 800;
+    font-size: 19px;
+    letter-spacing: -0.02em;
+    color: var(--fg-main);
+    text-decoration: none;
   }
-  .brand__mark img { width: 100%; height: 100%; }
-  .nav__links { display: flex; align-items: center; gap: 28px; font-size: 14px; color: var(--fg-muted); }
-  .nav__links a:hover { color: var(--fg); }
-  .nav__links .cta {
-    color: var(--bg-deep);
-    background: var(--accent);
-    padding: 8px 16px;
-    border-radius: 8px;
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary), var(--accent-blue));
+    padding: 2px;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .brand-icon img {
+    width: 100%;
+    height: 100%;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--fg-muted);
+    text-decoration: none;
+    font-size: 14.5px;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+  .nav-links a:hover {
+    color: var(--fg-main);
+  }
+  .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-size: 14px;
     font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .nav__links .cta:hover { background: var(--accent-strong); color: #fff; }
-  @media (max-width: 640px) {
-    .nav__links a:not(.cta) { display: none; }
+  .nav-btn-primary {
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    color: #fff;
+    box-shadow: 0 4px 20px var(--primary-glow);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  .nav-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 28px rgba(139, 92, 246, 0.5);
+    background: linear-gradient(135deg, #9333ea, #6d28d9);
+  }
+  .nav-btn-ghost {
+    background: var(--bg-card);
+    color: var(--fg-main);
+    border: 1px solid var(--border-subtle);
+  }
+  .nav-btn-ghost:hover {
+    border-color: var(--primary-light);
+    background: var(--bg-card-hover);
   }
 
-  /* Hero */
-  .hero { padding: 84px 0 40px; }
-  .hero__grid {
-    display: grid;
-    grid-template-columns: 1.05fr 1fr;
-    gap: 56px;
-    align-items: center;
+  @media (max-width: 768px) {
+    .nav-links a:not(.cta-link) { display: none; }
   }
-  @media (max-width: 860px) {
-    .hero__grid { grid-template-columns: 1fr; }
+
+  /* Hero Section */
+  .hero-section {
+    padding: 80px 0 60px;
+    text-align: center;
   }
-  .eyebrow {
+  .badge-pill {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-family: var(--mono);
-    font-size: 12.5px;
-    letter-spacing: 0.04em;
-    color: var(--accent-ink);
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
-    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-    padding: 5px 12px;
+    padding: 6px 14px;
     border-radius: 100px;
-    margin-bottom: 22px;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: var(--primary-light);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 24px;
   }
-  .eyebrow__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
-  h1.hero__title {
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: clamp(34px, 5vw, 54px);
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-emerald);
+    box-shadow: 0 0 10px var(--accent-emerald);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+  }
+  .hero-title {
+    font-size: clamp(40px, 6vw, 64px);
+    font-weight: 800;
     line-height: 1.08;
-    letter-spacing: -0.01em;
-    margin: 0 0 20px;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
     text-wrap: balance;
   }
-  h1.hero__title em {
-    font-style: italic;
-    background: linear-gradient(100deg, var(--accent-ink), var(--blue));
+  .hero-title span.gradient-text {
+    background: linear-gradient(135deg, #ffffff 0%, var(--primary-light) 50%, var(--accent-blue) 100%);
     -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    -webkit-text-fill-color: transparent;
   }
-  .hero__sub {
-    font-size: 17px;
+  .hero-sub {
+    font-size: clamp(17px, 2.2vw, 20px);
     color: var(--fg-muted);
-    max-width: 480px;
-    margin: 0 0 30px;
+    max-width: 780px;
+    margin: 0 auto 36px;
+    font-weight: 400;
   }
-  .hero__ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
-  .btn {
-    display: inline-flex;
+  .hero-ctas {
+    display: flex;
     align-items: center;
-    gap: 8px;
-    font-family: var(--sans);
-    font-weight: 600;
-    font-size: 14.5px;
-    padding: 12px 20px;
-    border-radius: 10px;
-    border: 1px solid transparent;
-    cursor: pointer;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
   }
-  .btn--primary { background: var(--accent); color: var(--bg-deep); }
-  .btn--primary:hover { background: var(--accent-strong); color: #fff; }
-  .btn--ghost { background: var(--surface-raised); border-color: var(--border-strong); color: var(--fg); }
-  .btn--ghost:hover { border-color: var(--accent); }
-  .btn--soon {
-    background: transparent;
-    border: 1px dashed var(--border-strong);
-    color: var(--muted);
-    cursor: default;
+  .btn-lg {
+    padding: 14px 28px;
+    font-size: 16px;
+    border-radius: 12px;
   }
-  .hero__shortcut {
-    font-size: 13px;
-    color: var(--muted);
+  .shortcut-hint {
+    font-size: 14px;
+    color: var(--fg-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
   kbd {
-    font-family: var(--mono);
-    font-size: 11.5px;
-    background: var(--surface-raised);
-    border: 1px solid var(--border-strong);
-    border-bottom-width: 2px;
-    border-radius: 5px;
-    padding: 2px 6px;
-    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 3px 8px;
+    color: var(--fg-main);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
   }
 
-  /* Hero visual: browser chrome mock */
-  .browser {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
+  /* Interactive Live Simulator Playground */
+  .simulator-wrapper {
+    margin-top: 56px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-glow);
+    border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 30px 70px -20px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.02);
+    box-shadow: 0 20px 80px -10px rgba(0, 0, 0, 0.8), 0 0 40px rgba(139, 92, 246, 0.15);
+    text-align: left;
   }
-  .browser__bar {
+  .window-header {
+    background: #110e1a;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .window-dots {
+    display: flex;
+    gap: 8px;
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot-red { background: #ff5f56; }
+  .dot-yellow { background: #ffbd2e; }
+  .dot-green { background: #27c93f; }
+  .window-title {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--fg-dim);
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface-raised);
   }
-  .browser__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border-strong); }
-  .browser__url {
-    flex: 1;
-    margin-left: 8px;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 5px 10px;
-  }
-  .browser__body img { width: 100%; }
-
-  /* Section headers */
-  .section-head { max-width: 560px; margin: 0 0 40px; }
-  .section-head .eyebrow { margin-bottom: 14px; }
-  .section-head h2 {
-    font-family: var(--display);
-    font-size: clamp(26px, 3.4vw, 34px);
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    margin: 0 0 10px;
-    text-wrap: balance;
-  }
-  .section-head p { color: var(--muted); font-size: 15.5px; margin: 0; }
-
-  /* How it works */
-  .how { padding: 88px 0 8px; }
-  .how__steps {
+  .sim-body {
+    padding: 32px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
   }
-  @media (max-width: 760px) { .how__steps { grid-template-columns: 1fr; } }
-  .step {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 26px;
+  @media (max-width: 900px) {
+    .sim-body { grid-template-columns: 1fr; }
   }
-  .step__num {
-    font-family: var(--mono);
-    font-size: 13px;
-    color: var(--accent-ink);
-    margin-bottom: 14px;
-    display: block;
-  }
-  .step h3 { font-size: 17px; margin: 0 0 8px; font-weight: 600; }
-  .step p { color: var(--muted); font-size: 14.5px; margin: 0; }
-
-  /* Features */
-  .features { padding: 88px 0 8px; }
-  .features__grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 18px;
-  }
-  @media (max-width: 860px) { .features__grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 560px) { .features__grid { grid-template-columns: 1fr; } }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
+  .sim-input-box, .sim-output-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
     border-radius: 14px;
-    padding: 22px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
   }
-  .card__icon {
-    width: 36px; height: 36px;
-    border-radius: 9px;
-    display: flex; align-items: center; justify-content: center;
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
-    color: var(--accent-ink);
-    margin-bottom: 16px;
-    font-size: 16px;
+  .sim-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-dim);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
-  .card h3 { font-size: 15.5px; margin: 0 0 6px; font-weight: 600; }
-  .card p { font-size: 14px; color: var(--muted); margin: 0; }
-
-  /* Providers */
-  .providers { padding: 88px 0 8px; }
-  .providers__row {
+  .sim-textarea {
+    width: 100%;
+    height: 120px;
+    background: transparent;
+    border: none;
+    color: var(--fg-main);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    resize: none;
+    outline: none;
+    line-height: 1.5;
+  }
+  .sim-presets-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg-muted);
+    margin-bottom: 8px;
+  }
+  .sim-presets-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
   }
-  .pill {
+  .sim-preset-btn {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--fg-muted);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--fg-muted);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    padding: 9px 16px;
+    gap: 6px;
   }
-  .pill__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sim-preset-btn:hover, .sim-preset-btn.active {
+    background: var(--primary-glow);
+    border-color: var(--primary-light);
+    color: #fff;
+  }
+  .sim-output-box {
+    border-color: rgba(139, 92, 246, 0.3);
+    background: linear-gradient(160deg, #13101f, #181427);
+  }
+  .sim-output-text {
+    font-size: 15px;
+    color: var(--fg-main);
+    min-height: 120px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .sim-output-text.rewriting {
+    opacity: 0.6;
+    animation: blink 1s infinite;
+  }
+  .sim-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+  }
+  .sim-action-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+  }
+  .btn-replace {
+    background: var(--accent-emerald);
+    color: #000;
+  }
+  .btn-replace:hover { opacity: 0.9; }
+  .btn-copy {
+    background: var(--bg-surface);
+    color: var(--fg-main);
+    border: 1px solid var(--border-subtle);
+  }
+  .btn-copy:hover { border-color: var(--fg-muted); }
 
-  /* Screenshot strip */
-  .showcase { padding: 88px 0 8px; }
-  .showcase__frame {
-    max-width: 760px;
+  /* Section Header */
+  .section-head {
+    text-align: center;
+    max-width: 680px;
+    margin: 100px auto 56px;
+  }
+  .section-head .badge-pill { margin-bottom: 16px; }
+  .section-title {
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .section-desc {
+    font-size: 16.5px;
+    color: var(--fg-muted);
+  }
+
+  /* Provider Ecosystem Grid */
+  .providers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+  }
+  .provider-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .provider-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary-light);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+  }
+  .provider-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .provider-icon-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: 0 0 12px currentColor;
+  }
+  .provider-name {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .provider-models {
+    font-size: 13.5px;
+    color: var(--fg-muted);
+    margin-bottom: 14px;
+  }
+  .provider-endpoint {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-dim);
+    background: var(--bg-surface);
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  /* Feature Grid */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  @media (max-width: 960px) {
+    .features-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .features-grid { grid-template-columns: 1fr; }
+  }
+  .feature-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    padding: 30px;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .feature-card:hover {
+    border-color: var(--border-glow);
+    background: var(--bg-card-hover);
+    transform: translateY(-4px);
+  }
+  .feature-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--primary-glow);
+    color: var(--primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  .feature-title {
+    font-size: 19px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .feature-desc {
+    font-size: 14.5px;
+    color: var(--fg-muted);
+    line-height: 1.6;
+  }
+
+  /* Screenshots Showcase Tabs */
+  .tab-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    color: var(--fg-muted);
+    padding: 10px 20px;
+    border-radius: 100px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .tab-btn:hover, .tab-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 4px 20px var(--primary-glow);
+  }
+  .screenshot-frame {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-glow);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+    max-width: 900px;
     margin: 0 auto;
   }
-  .showcase__caption { text-align: center; color: var(--muted); font-size: 14px; margin-top: 16px; }
+  .screenshot-frame img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
 
-  /* Privacy */
-  .privacy { padding: 88px 0 8px; }
-  .privacy__box {
-    background: linear-gradient(160deg, var(--surface), var(--surface-raised));
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 40px;
+  /* Privacy Box */
+  .privacy-banner {
+    background: linear-gradient(135deg, rgba(21, 18, 33, 0.9), rgba(14, 12, 22, 0.95));
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 24px;
+    padding: 48px;
+    margin: 80px 0;
     display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 32px;
+    grid-template-columns: 1fr 340px;
+    gap: 40px;
     align-items: center;
   }
-  @media (max-width: 700px) { .privacy__box { grid-template-columns: 1fr; } }
-  .privacy__box h2 {
-    font-family: var(--display);
-    font-size: 26px;
-    font-weight: 700;
-    margin: 0 0 10px;
+  @media (max-width: 900px) {
+    .privacy-banner { grid-template-columns: 1fr; }
   }
-  .privacy__box p { color: var(--fg-muted); margin: 0; max-width: 480px; font-size: 15px; }
-  .privacy__list { margin: 16px 0 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--muted); display: grid; gap: 8px; }
-  .privacy__list li { display: flex; align-items: baseline; gap: 8px; }
-  .privacy__list li::before { content: "—"; color: var(--accent); flex-shrink: 0; }
+  .privacy-title {
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 14px;
+  }
+  .privacy-desc {
+    font-size: 16px;
+    color: var(--fg-muted);
+    margin-bottom: 24px;
+  }
+  .privacy-points {
+    list-style: none;
+    display: grid;
+    gap: 12px;
+  }
+  .privacy-points li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    color: var(--fg-main);
+  }
+  .privacy-points check {
+    color: var(--accent-emerald);
+    font-weight: 800;
+  }
+  .arch-diagram {
+    background: var(--bg-dark);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  .arch-node {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 13.5px;
+  }
+  .arch-arrow {
+    color: var(--accent-emerald);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* FAQ Accordion */
+  .faq-list {
+    max-width: 800px;
+    margin: 0 auto 80px;
+    display: grid;
+    gap: 16px;
+  }
+  .faq-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .faq-question {
+    padding: 20px 24px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+  .faq-question:hover { color: var(--primary-light); }
+  .faq-answer {
+    padding: 0 24px 20px;
+    color: var(--fg-muted);
+    font-size: 15px;
+    display: none;
+    line-height: 1.65;
+  }
+  .faq-item.open .faq-answer { display: block; }
+  .faq-item.open .faq-toggle { transform: rotate(180deg); }
+  .faq-toggle { transition: transform 0.2s ease; }
 
   /* Footer */
-  footer { padding: 60px 0 48px; border-top: 1px solid var(--border); margin-top: 88px; }
-  .footer__row {
+  footer {
+    border-top: 1px solid var(--border-subtle);
+    padding: 48px 0;
+    background: var(--bg-surface);
+  }
+  .footer-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 24px;
   }
-  .footer__links { display: flex; gap: 22px; font-size: 13.5px; color: var(--muted); }
-  .footer__links a:hover { color: var(--fg); }
-  .footer__copy { font-size: 12.5px; color: var(--muted); font-family: var(--mono); }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .btn, a { transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+  .footer-links {
+    display: flex;
+    gap: 28px;
+    list-style: none;
+  }
+  .footer-links a {
+    color: var(--fg-muted);
+    text-decoration: none;
+    font-size: 14px;
+  }
+  .footer-links a:hover { color: var(--fg-main); }
+  .footer-copy {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-dim);
   }
 </style>
 </head>
 <body>
 
-  <nav class="nav">
-    <div class="nav__row">
-      <div class="brand">
-        <span class="brand__mark"><img src="site-assets/icon.svg" alt="" /></span>
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="wrap nav-row">
+      <a class="brand" href="index.html">
+        <div class="brand-icon"><img src="site-assets/icon.svg" alt="Rewriter AI" /></div>
         Rewriter AI
-      </div>
-      <div class="nav__links">
-        <a href="#how">How it works</a>
-        <a href="#features">Features</a>
-        <a href="#providers">Providers</a>
-        <a href="privacy-policy.html">Privacy</a>
-        <a class="cta" href="https://github.com/bhaggat/rewriter-ai" target="_blank" rel="noopener noreferrer">View on GitHub</a>
-      </div>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#simulator">Try Demo</a></li>
+        <li><a href="#providers">Providers</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#showcase">Screenshots</a></li>
+        <li><a href="privacy-policy.html">Privacy Policy</a></li>
+        <li><a class="nav-btn nav-btn-ghost" href="https://github.com/bhaggat/rewriter-ai" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+        <li><a class="nav-btn nav-btn-primary cta-link" href="https://github.com/bhaggat/rewriter-ai" target="_blank" rel="noopener noreferrer">Get Extension</a></li>
+      </ul>
     </div>
   </nav>
 
-  <header class="hero wrap">
-    <div class="hero__grid">
-      <div>
-        <span class="eyebrow"><span class="eyebrow__dot"></span>Chrome extension · MV3</span>
-        <h1 class="hero__title">Rewrite anywhere.<br /><em>Your API keys, your data.</em></h1>
-        <p class="hero__sub">Rewriter AI adds an AI writing assistant to every text field on the web, and a chat window in your toolbar — powered by OpenAI, Gemini, Claude, Grok, Groq, Mistral, or OpenRouter. Bring your own key. There's no backend in between.</p>
-        <div class="hero__ctas">
-          <a class="btn btn--primary" href="https://github.com/bhaggat/rewriter-ai" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
-          <span class="btn btn--soon" title="Submitted — awaiting Chrome Web Store review">Add to Chrome — coming soon</span>
+  <!-- Hero Section -->
+  <header class="hero-section wrap">
+    <div class="badge-pill">
+      <span class="pulse-dot"></span>
+      Chrome Extension (MV3) • Zero Intermediate Servers
+    </div>
+    <h1 class="hero-title">
+      Rewrite Text Anywhere.<br />
+      <span class="gradient-text">Your API Keys, Total Privacy.</span>
+    </h1>
+    <p class="hero-sub">
+      Rewriter AI embeds a context-aware AI writing assistant into every text box on the web, plus a full conversational sidebar in your browser toolbar. Direct client requests to OpenAI, Gemini, Claude, Grok, Groq, Mistral, or OpenRouter.
+    </p>
+
+    <div class="hero-ctas">
+      <a class="nav-btn nav-btn-primary btn-lg" href="https://github.com/bhaggat/rewriter-ai" target="_blank" rel="noopener noreferrer">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Add to Chrome (Free)
+      </a>
+      <a class="nav-btn nav-btn-ghost btn-lg" href="https://github.com/bhaggat/rewriter-ai" target="_blank" rel="noopener noreferrer">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        View Source Code
+      </a>
+    </div>
+
+    <div class="shortcut-hint">
+      Trigger anywhere with shortcut: <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd> (Mac: <kbd>Option</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd>)
+    </div>
+
+    <!-- Interactive Live Simulator -->
+    <div class="simulator-wrapper" id="simulator">
+      <div class="window-header">
+        <div class="window-dots">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
         </div>
-        <p class="hero__shortcut">Trigger it anywhere with <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> (<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> on Mac)</p>
+        <div class="window-title">
+          ⚡ Live Interactive Rewriter Playground
+        </div>
+        <div></div>
       </div>
-      <div class="browser">
-        <div class="browser__bar">
-          <span class="browser__dot"></span><span class="browser__dot"></span><span class="browser__dot"></span>
-          <span class="browser__url">jordan is drafting a follow-up email</span>
+      <div class="sim-body">
+        <div class="sim-input-box">
+          <div class="sim-label">
+            <span>Focused Field Input</span>
+            <span style="color:var(--primary-light)">Selected Text</span>
+          </div>
+          <textarea id="simInput" class="sim-textarea" placeholder="Type or edit text here...">Hey team, just wanted to check if everyone finished their quarterly reports. Please upload them asap so we can review before the end of day meeting thanks!</textarea>
+          <div class="sim-presets-title">Click a Rewrite Style:</div>
+          <div class="sim-presets-grid">
+            <button class="sim-preset-btn active" onclick="simulateRewrite('formal')">👔 Formal Email</button>
+            <button class="sim-preset-btn" onclick="simulateRewrite('concise')">📝 Concise</button>
+            <button class="sim-preset-btn" onclick="simulateRewrite('grammar')">⚡ Fix Grammar</button>
+            <button class="sim-preset-btn" onclick="simulateRewrite('expand')">🚀 Expand Detail</button>
+            <button class="sim-preset-btn" onclick="simulateRewrite('casual')">🔥 Friendly / Slack</button>
+          </div>
         </div>
-        <div class="browser__body">
-          <img src="site-assets/screenshot-hero.png" alt="The Rewriter AI popover showing a rewritten email draft, with Replace, Copy, and Try another actions" />
+
+        <div class="sim-output-box">
+          <div class="sim-label">
+            <span>Rewriter AI Output</span>
+            <span style="color:var(--accent-emerald)" id="simProvider">Gemini 2.5 Flash</span>
+          </div>
+          <div id="simOutput" class="sim-output-text">Dear Team,
+
+Could you please confirm if your quarterly reports have been finalized? Kindly submit them at your earliest convenience so we may review them prior to today's end-of-day meeting.
+
+Thank you.</div>
+          <div class="sim-actions">
+            <button class="sim-action-btn btn-replace" onclick="applySimReplace()">✓ Replace Text in Field</button>
+            <button class="sim-action-btn btn-copy" onclick="copySimResult()">📋 Copy Result</button>
+          </div>
         </div>
       </div>
     </div>
   </header>
 
-  <section class="how wrap" id="how">
+  <!-- Provider Ecosystem -->
+  <section class="wrap" id="providers">
     <div class="section-head">
-      <span class="eyebrow"><span class="eyebrow__dot"></span>How it works</span>
-      <h2>Three steps. Zero context switching.</h2>
-      <p>No separate tab, no copy-pasting into a chat window unless you want to.</p>
+      <div class="badge-pill">Bring Your Own Key (BYOK)</div>
+      <h2 class="section-title">7 Major AI Providers. 1 Extension.</h2>
+      <p class="section-desc">Add keys for the providers you already use. Switch seamlessly between flagship models or open weights.</p>
     </div>
-    <div class="how__steps">
-      <div class="step">
-        <span class="step__num">01</span>
-        <h3>Focus any text field</h3>
-        <p>A small icon appears next to the field the moment it holds enough text to be worth rewriting.</p>
+
+    <div class="providers-grid">
+      <div class="provider-card">
+        <div class="provider-head">
+          <span class="provider-icon-dot" style="color:#10a37f; background:#10a37f"></span>
+          <span class="provider-endpoint">api.openai.com</span>
+        </div>
+        <div class="provider-name">OpenAI</div>
+        <div class="provider-models">GPT-4o, GPT-4o-mini, o1, o3-mini</div>
       </div>
-      <div class="step">
-        <span class="step__num">02</span>
-        <h3>Pick a preset, or describe it</h3>
-        <p>Concise, Formal, Friendly, Fix Grammar — or type your own instruction in plain English.</p>
+
+      <div class="provider-card">
+        <div class="provider-head">
+          <span class="provider-icon-dot" style="color:#4285f4; background:#4285f4"></span>
+          <span class="provider-endpoint">generativelanguage...</span>
+        </div>
+        <div class="provider-name">Google Gemini</div>
+        <div class="provider-models">Gemini 2.5 Flash, Gemini 2.5 Pro</div>
       </div>
-      <div class="step">
-        <span class="step__num">03</span>
-        <h3>Replace, copy, or try again</h3>
-        <p>The result drops right back into the field you were editing. Nothing leaves your browser except the request itself.</p>
+
+      <div class="provider-card">
+        <div class="provider-head">
+          <span class="provider-icon-dot" style="color:#d97757; background:#d97757"></span>
+          <span class="provider-endpoint">api.anthropic.com</span>
+        </div>
+        <div class="provider-name">Anthropic Claude</div>
+        <div class="provider-models">Claude 3.5 Sonnet, Claude 3.5 Haiku</div>
+      </div>
+
+      <div class="provider-card">
+        <div class="provider-head">
+          <span class="provider-icon-dot" style="color:#f43f5e; background:#f43f5e"></span>
+          <span class="provider-endpoint">api.x.ai</span>
+        </div>
+        <div class="provider-name">xAI Grok</div>
+        <div class="provider-models">Grok 2, Grok Vision</div>
+      </div>
+
+      <div class="provider-card">
+        <div class="provider-head">
+          <span class="provider-icon-dot" style="color:#f97316; background:#f97316"></span>
+          <span class="provider-endpoint">api.groq.com</span>
+        </div>
+        <div class="provider-name">Groq</div>
+        <div class="provider-models">Llama 3.3 70B, DeepSeek R1 Distill</div>
+      </div>
+
+      <div class="provider-card">
+        <div class="provider-head">
+          <span class="provider-icon-dot" style="color:#a855f7; background:#a855f7"></span>
+          <span class="provider-endpoint">api.mistral.ai</span>
+        </div>
+        <div class="provider-name">Mistral AI</div>
+        <div class="provider-models">Mistral Large, Pixtral</div>
+      </div>
+
+      <div class="provider-card">
+        <div class="provider-head">
+          <span class="provider-icon-dot" style="color:#38bdf8; background:#38bdf8"></span>
+          <span class="provider-endpoint">openrouter.ai</span>
+        </div>
+        <div class="provider-name">OpenRouter</div>
+        <div class="provider-models">200+ Open Models & Specializations</div>
       </div>
     </div>
   </section>
 
-  <section class="features wrap" id="features">
+  <!-- Features Grid -->
+  <section class="wrap" id="features">
     <div class="section-head">
-      <span class="eyebrow"><span class="eyebrow__dot"></span>Features</span>
-      <h2>Built for wherever you already write</h2>
+      <div class="badge-pill">Capabilities</div>
+      <h2 class="section-title">Built for Your Real Workflow</h2>
+      <p class="section-desc">Designed to remove friction without getting in your way or forcing copy-paste roundtrips.</p>
     </div>
-    <div class="features__grid">
-      <div class="card">
-        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5l4 4L8 20H4v-4z"/><path d="M13 7l4 4"/></svg></div>
-        <h3>Inline rewrite, everywhere</h3>
-        <p>Works in any text field or contenteditable area on any site — email, comments, docs, forms.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🪄</div>
+        <h3 class="feature-title">Inline Rewrite Anywhere</h3>
+        <p class="feature-desc">Works across inputs, textareas, and contenteditable editors in Gmail, GitHub, Slack web, Notion, Jira, and social media.</p>
       </div>
-      <div class="card">
-        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v10H12l-4 3.5v-3.5H4z"/></svg></div>
-        <h3>Full chat, in your toolbar</h3>
-        <p>Open a real conversation with your chosen model from the extension popup, or pop it into its own window.</p>
+
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3 class="feature-title">Keyboard First (Alt+Shift+R)</h3>
+        <p class="feature-desc">Instantly trigger the floating AI rewrite panel on whichever text field your cursor is focused on. Keep your hands on the keys.</p>
       </div>
-      <div class="card">
-        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h11M4 12h16M4 18h8"/><circle cx="18" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.6" fill="currentColor" stroke="none"/></svg></div>
-        <h3>Presets you control</h3>
-        <p>Edit, reorder, delete, or add your own quick-rewrite instructions from the settings page.</p>
+
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3 class="feature-title">Full Toolbar AI Chat</h3>
+        <p class="feature-desc">Open a full AI conversation panel directly from your Chrome toolbar icon, complete with streaming responses and history.</p>
       </div>
-      <div class="card">
-        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="11" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M17 10h.01M7 13.5h10"/></svg></div>
-        <h3>Keyboard-first</h3>
-        <p>Ctrl/Cmd+Shift+R opens the rewrite popover on whatever field you're focused in, hands never leave the keyboard.</p>
+
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <h3 class="feature-title">Custom Style Presets</h3>
+        <p class="feature-desc">Create your own tailored prompt presets for technical writing, language translation, bullet point summaries, or code refactoring.</p>
       </div>
-      <div class="card">
-        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l7 3.5v6L12 20l-7-6.5v-6z"/><path d="M9.5 9.5l5 5"/></svg></div>
-        <h3>Per-site control</h3>
-        <p>Turn the inline icon off globally, or exclude specific sites you don't want it appearing on.</p>
+
+      <div class="feature-card">
+        <div class="feature-icon">🧠</div>
+        <h3 class="feature-title">Remembers Last Used Style</h3>
+        <p class="feature-desc">Automatically pre-selects your last used rewrite style so repetitive writing tasks require zero additional clicks.</p>
       </div>
-      <div class="card">
-        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="6" rx="1.5"/><rect x="3.5" y="14.5" width="17" height="6" rx="1.5"/><path d="M17 20l3-3M20 20l-3-3" opacity="0"/><path d="M4 21l16-16"/></svg></div>
-        <h3>No backend, no markup</h3>
-        <p>You call the provider directly with your own key, at their normal rates. We never sit in the middle.</p>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3 class="feature-title">100% Client-Side Privacy</h3>
+        <p class="feature-desc">No middleman server, no telemetry, no tracking, and no markup on token prices. Your API keys stay safely inside local storage.</p>
       </div>
     </div>
   </section>
 
-  <section class="providers wrap" id="providers">
+  <!-- Screenshots Gallery Showcase -->
+  <section class="wrap" id="showcase">
     <div class="section-head">
-      <span class="eyebrow"><span class="eyebrow__dot"></span>Bring your own key</span>
-      <h2>Seven providers, one extension</h2>
-      <p>Add a key for whichever you already use — mix and match, or stick to one.</p>
+      <div class="badge-pill">Interface</div>
+      <h2 class="section-title">Clean & Modern UI</h2>
+      <p class="section-desc">Seamless integration with Chrome native dark themes and high-contrast accessibility.</p>
     </div>
-    <div class="providers__row">
-      <span class="pill"><span class="pill__dot" style="background:#74aa9c"></span>OpenAI · ChatGPT</span>
-      <span class="pill"><span class="pill__dot" style="background:#4285f4"></span>Google · Gemini</span>
-      <span class="pill"><span class="pill__dot" style="background:#d97757"></span>Anthropic · Claude</span>
-      <span class="pill"><span class="pill__dot" style="background:#e4e4e4"></span>xAI · Grok</span>
-      <span class="pill"><span class="pill__dot" style="background:#f55036"></span>Groq</span>
-      <span class="pill"><span class="pill__dot" style="background:#fa8072"></span>Mistral</span>
-      <span class="pill"><span class="pill__dot" style="background:#a78bfa"></span>OpenRouter</span>
+
+    <div class="tab-buttons">
+      <button class="tab-btn active" onclick="switchTab(0)">Inline Presets</button>
+      <button class="tab-btn" onclick="switchTab(1)">Inline Rewrite Result</button>
+      <button class="tab-btn" onclick="switchTab(2)">API Keys Settings</button>
+      <button class="tab-btn" onclick="switchTab(3)">Preset Manager</button>
+    </div>
+
+    <div class="screenshot-frame">
+      <img id="tabImage" src="store-assets/screenshots/1-inline-rewrite-presets.png" alt="Rewriter AI Interface Showcase" />
     </div>
   </section>
 
-  <section class="showcase wrap">
-    <div class="section-head">
-      <span class="eyebrow"><span class="eyebrow__dot"></span>Settings</span>
-      <h2>Every key, every model, one page</h2>
-    </div>
-    <div class="showcase__frame browser">
-      <div class="browser__bar">
-        <span class="browser__dot"></span><span class="browser__dot"></span><span class="browser__dot"></span>
-        <span class="browser__url">chrome-extension://.../options.html</span>
-      </div>
-      <div class="browser__body"><img src="site-assets/screenshot-options.png" alt="The Rewriter AI settings page listing API key fields and default models for all seven providers" /></div>
-    </div>
-  </section>
-
-  <section class="privacy wrap">
-    <div class="privacy__box">
+  <!-- Privacy & Zero Backend Banner -->
+  <section class="wrap">
+    <div class="privacy-banner">
       <div>
-        <h2>No server. Nothing to leak.</h2>
-        <p>Rewriter AI has no backend. Your API keys, chat history, and presets stay in your browser's local storage. When you rewrite text or send a chat message, it goes straight from your browser to the provider you configured — never through us.</p>
+        <h2 class="privacy-title">Zero Backend Architecture</h2>
+        <p class="privacy-desc">
+          Unlike traditional AI browser extensions, Rewriter AI does not proxy your requests through a central server. Your API key and text travel directly from your browser to your chosen provider via HTTPS.
+        </p>
+        <ul class="privacy-points">
+          <li><span style="color:var(--accent-emerald)">✓</span> Stored strictly in <code>chrome.storage.local</code></li>
+          <li><span style="color:var(--accent-emerald)">✓</span> Zero middleman servers or third-party analytics</li>
+          <li><span style="color:var(--accent-emerald)">✓</span> Full control over domain exclusions & site triggers</li>
+        </ul>
       </div>
-      <a class="btn btn--ghost" href="privacy-policy.html">Read the full privacy policy →</a>
+
+      <div class="arch-diagram">
+        <div class="arch-node">Your Chrome Browser</div>
+        <div class="arch-arrow">⬇ Direct HTTPS Request</div>
+        <div class="arch-node" style="border-color:var(--primary-light); color:var(--primary-light)">AI Provider API (OpenAI/Gemini/Claude)</div>
+      </div>
     </div>
   </section>
 
-  <footer class="wrap">
-    <div class="footer__row">
-      <div class="footer__links">
-        <a href="https://github.com/bhaggat/rewriter-ai" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <a href="https://github.com/bhaggat/rewriter-ai/issues" target="_blank" rel="noopener noreferrer">Report an issue</a>
-        <a href="privacy-policy.html">Privacy Policy</a>
+  <!-- FAQ Section -->
+  <section class="wrap">
+    <div class="section-head">
+      <div class="badge-pill">Frequently Asked Questions</div>
+      <h2 class="section-title">Everything You Need to Know</h2>
+    </div>
+
+    <div class="faq-list">
+      <div class="faq-item open">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          How does Bring Your Own Key (BYOK) work?
+          <span class="faq-toggle">▼</span>
+        </div>
+        <div class="faq-answer">
+          You generate an API key directly from OpenAI, Google AI Studio, Anthropic, xAI, Groq, Mistral, or OpenRouter and paste it into the extension settings. The extension uses that key to make API calls straight to the provider at raw developer rates.
+        </div>
       </div>
-      <div class="footer__copy">rewriter-ai v1.0.0</div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Is Rewriter AI completely free to use?
+          <span class="faq-toggle">▼</span>
+        </div>
+        <div class="faq-answer">
+          Yes! Rewriter AI is 100% free and open-source under the MIT license. You only pay your chosen AI provider directly for the API tokens you consume (which is typically fractions of a cent per request).
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Can I change the keyboard shortcut?
+          <span class="faq-toggle">▼</span>
+        </div>
+        <div class="faq-answer">
+          Yes. The default shortcut is <code>Alt+Shift+R</code> (or <code>Option+Shift+R</code> on Mac). You can easily customize it to any key combination by visiting <code>chrome://extensions/shortcuts</code> in your browser.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Does the extension read all the web pages I visit?
+          <span class="faq-toggle">▼</span>
+        </div>
+        <div class="faq-answer">
+          No. The content script strictly activates only when you focus an editable text input or textarea. It only reads the specific text content inside that active field when you trigger a rewrite—never the surrounding webpage content.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="wrap footer-row">
+      <div class="brand">
+        <div class="brand-icon"><img src="site-assets/icon.svg" alt="Rewriter AI" /></div>
+        Rewriter AI
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/bhaggat/rewriter-ai" target="_blank" rel="noopener noreferrer">GitHub Repository</a></li>
+        <li><a href="https://github.com/bhaggat/rewriter-ai/issues" target="_blank" rel="noopener noreferrer">Report an Issue</a></li>
+        <li><a href="privacy-policy.html">Privacy Policy</a></li>
+        <li><a href="https://rewriter.bhaggat.in/">rewriter.bhaggat.in</a></li>
+      </ul>
+      <div class="footer-copy">
+        Rewriter AI v1.0.0 • Open Source (MIT)
+      </div>
     </div>
   </footer>
 
+  <script>
+    // Tab switcher logic
+    const tabImages = [
+      "store-assets/screenshots/1-inline-rewrite-presets.png",
+      "store-assets/screenshots/2-inline-rewrite-result.png",
+      "store-assets/screenshots/3-options-api-keys.png",
+      "store-assets/screenshots/4-options-presets.png"
+    ];
+
+    function switchTab(index) {
+      document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === index);
+      });
+      const img = document.getElementById('tabImage');
+      img.style.opacity = 0;
+      setTimeout(() => {
+        img.src = tabImages[index];
+        img.style.opacity = 1;
+      }, 150);
+    }
+
+    // FAQ Accordion logic
+    function toggleFaq(element) {
+      const item = element.parentElement;
+      item.classList.toggle('open');
+    }
+
+    // Live Simulator Logic
+    const simResults = {
+      formal: "Dear Team,\n\nCould you please confirm if your quarterly reports have been finalized? Kindly submit them at your earliest convenience so we may review them prior to today's end-of-day meeting.\n\nThank you.",
+      concise: "Please upload your quarterly reports ASAP for review before today's EOD meeting. Thanks!",
+      grammar: "Hey team, just wanted to check if everyone has finished their quarterly reports. Please upload them ASAP so we can review them before the end-of-day meeting. Thanks!",
+      expand: "Hello everyone,\n\nI am writing to touch base regarding the Q3 quarterly performance reports. Please ensure all completed documents are uploaded to the shared folder at your earliest opportunity. This will allow our team sufficient time to analyze the key metrics prior to our scheduled end-of-day sync.\n\nAppreciate your prompt attention to this matter!",
+      casual: "Hey team! Quick check-in: has everyone wrapped up their quarterly reports? Mind dropping them in ASAP so we can go over them before today's EOD meeting? 🙌"
+    };
+
+    function simulateRewrite(presetKey) {
+      document.querySelectorAll('.sim-preset-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const outputEl = document.getElementById('simOutput');
+      outputEl.classList.add('rewriting');
+      outputEl.innerText = "Rewriting with AI...";
+
+      setTimeout(() => {
+        outputEl.classList.remove('rewriting');
+        outputEl.innerText = simResults[presetKey] || simResults.formal;
+      }, 350);
+    }
+
+    function applySimReplace() {
+      const outputText = document.getElementById('simOutput').innerText;
+      document.getElementById('simInput').value = outputText;
+      const btn = document.querySelector('.btn-replace');
+      const origText = btn.innerText;
+      btn.innerText = "✓ Applied!";
+      setTimeout(() => btn.innerText = origText, 1500);
+    }
+
+    function copySimResult() {
+      const outputText = document.getElementById('simOutput').innerText;
+      navigator.clipboard.writeText(outputText);
+      const btn = document.querySelector('.btn-copy');
+      const origText = btn.innerText;
+      btn.innerText = "📋 Copied!";
+      setTimeout(() => btn.innerText = origText, 1500);
+    }
+  </script>
 </body>
 </html>

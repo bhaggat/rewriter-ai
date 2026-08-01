@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { providerClients } from '@/lib/providers';
 import type { Provider } from '@/lib/providers/types';
+import { CheckIcon, CloseIcon } from '@/components/icons';
 
 interface Props {
   provider: Provider;
@@ -57,7 +58,7 @@ export default function ValidateKeyButton({ provider, apiKey }: Props) {
           aria-label="Key is valid"
           title="Key is valid"
         >
-          ✓
+          <CheckIcon size={12} />
         </span>
       )}
       {status === 'invalid' && (
@@ -66,7 +67,7 @@ export default function ValidateKeyButton({ provider, apiKey }: Props) {
           tabIndex={0}
           aria-label={error ?? 'Key is invalid'}
         >
-          ✗
+          <CloseIcon size={12} />
           <span className="validate-key__tooltip" role="tooltip">
             {error ?? 'Key is invalid.'}
           </span>

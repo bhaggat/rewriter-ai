@@ -26,3 +26,14 @@ export interface TriggerRewriteShortcutMessage {
 export interface GetSelectionMessage {
   type: 'GET_SELECTION';
 }
+
+/** Sent from popup → content script to insert text into the last focused editable field. */
+export interface InsertTextMessage {
+  type: 'INSERT_TEXT';
+  text: string;
+}
+
+/** Sent from popup → content script to check if a field is available for insertion. */
+export interface HasEditableFieldMessage {
+  type: 'HAS_EDITABLE_FIELD';
+}

@@ -1,5 +1,6 @@
 import { API_KEY_INFO, PROVIDER_LABELS } from '@/lib/models';
 import type { Provider } from '@/lib/providers/types';
+import { InfoIcon } from '@/components/icons';
 
 interface Props {
   provider: Provider;
@@ -21,11 +22,7 @@ export default function ApiKeyLabel({ provider, htmlFor }: Props) {
         {info.linkLabel} ↗
       </a>
       <span className="api-key-label__info" tabIndex={0}>
-        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-          <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="1.4" />
-          <circle cx="8" cy="4.6" r="0.9" fill="currentColor" />
-          <path d="M8 7.2v4.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
+        <InfoIcon size={14} />
         <span className="api-key-label__tooltip" role="tooltip">
           {info.hint}
         </span>

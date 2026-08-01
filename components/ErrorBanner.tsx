@@ -1,3 +1,5 @@
+import { CloseIcon } from './icons';
+
 interface Props {
   message: string;
   onDismiss?: () => void;
@@ -14,7 +16,7 @@ export default function ErrorBanner({ message, onDismiss }: Props) {
           onClick={onDismiss}
           aria-label="Dismiss error"
         >
-          ✕
+          <CloseIcon size={12} />
         </button>
       )}
     </div>

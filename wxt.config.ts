@@ -3,6 +3,11 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   outDir: 'dist',
   modules: ['@wxt-dev/module-react'],
+  vite: () => ({
+    build: {
+      modulePreload: false,
+    },
+  }),
   manifest: {
     name: 'Rewriter AI',
     description:
@@ -26,8 +31,8 @@ export default defineConfig({
     commands: {
       'trigger-rewrite': {
         suggested_key: {
-          default: 'Ctrl+Shift+R',
-          mac: 'Command+Shift+R',
+          default: 'Alt+Shift+R',
+          mac: 'Alt+Shift+R',
         },
         description: 'Open the rewrite popover for the focused text field',
       },

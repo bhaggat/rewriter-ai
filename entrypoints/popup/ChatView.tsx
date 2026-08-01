@@ -6,16 +6,15 @@ import {
   deriveTitle,
   saveConversation,
   settingsStorage,
-  toggleSiteDenylist,
   type ApiKeys,
   type Conversation,
   type Settings,
 } from '@/lib/storage';
 import { MODELS, PROVIDER_LABELS, PROVIDERS } from '@/lib/models';
 import type { Provider } from '@/lib/providers/types';
-import type { BackgroundResponse, ChatRequest, GetSelectionMessage } from '@/lib/messaging';
+import type { BackgroundResponse, ChatRequest } from '@/lib/messaging';
 import { getErrorMessage } from '@/lib/errors';
-import { CheckIcon, CopyIcon, GearIcon, HistoryIcon, PlusIcon, PowerIcon } from '@/components/icons';
+import { CheckIcon, CopyIcon, HistoryIcon, PlusIcon } from '@/components/icons';
 import HistoryList from './HistoryList';
 
 interface Props {
@@ -34,7 +33,6 @@ export default function ChatView({ apiKeys }: Props) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>('chat');
-  const [hostname, setHostname] = useState<string | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
 
@@ -43,40 +41,11 @@ export default function ChatView({ apiKeys }: Props) {
     [apiKeys],
   );
 
-  const siteExcluded = Boolean(hostname && settings?.siteDenylist.includes(hostname));
-
   useEffect(() => {
     messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight });
   }, [conversation?.id, conversation?.messages.length, sending]);
 
-  useEffect(() => {
-    browser.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-      if (!tab?.url) return;
-      try {
-        setHostname(new URL(tab.url).hostname);
-      } catch {
-        // Non-http tab (e.g. chrome:// or file://) — no hostname to exclude.
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-        if (!tab?.id) return;
-        const message: GetSelectionMessage = { type: 'GET_SELECTION' };
-        const selected = await browser.tabs.sendMessage(tab.id, message);
-        if (typeof selected === 'string' && selected.trim()) {
-          setInput((current) => (current ? current : selected));
-        }
-      } catch {
-        // No content script on this tab (e.g. chrome:// or file://) — leave composer as-is.
-      }
-    })();
-    // One-shot prefill on mount only — not a live sync while the popup stays open.
-  }, []);
-
+  // Provider/model are initialised from settings on mount only.
   useEffect(() => {
     settingsStorage.getValue().then((loaded) => {
       setSettings(loaded);
@@ -84,12 +53,22 @@ export default function ChatView({ apiKeys }: Props) {
         ? loaded.defaultProvider
         : (availableProviders[0] ?? loaded.defaultProvider);
       setProvider(initialProvider);
-      setModel(loaded.defaultModel[initialProvider]);
+      setModel(loaded.defaultModel[initialProvider] || MODELS[initialProvider][0]!.id);
     });
+
+    const unwatchSettings = settingsStorage.watch((loaded) => {
+      setSettings(loaded);
+      if (loaded.defaultProvider && availableProviders.includes(loaded.defaultProvider)) {
+        setProvider(loaded.defaultProvider);
+        if (loaded.defaultModel?.[loaded.defaultProvider]) {
+          setModel(loaded.defaultModel[loaded.defaultProvider]);
+        }
+      }
+    });
+
     conversationsStorage.getValue().then(setConversations);
-    // Only run once on mount; availableProviders is derived from a stable initial apiKeys prop.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => unwatchSettings();
+  }, [availableProviders]);
 
   function handleNewChat() {
     setConversation(null);
@@ -101,7 +80,7 @@ export default function ChatView({ apiKeys }: Props) {
         ? settings.defaultProvider
         : (availableProviders[0] ?? settings.defaultProvider);
       setProvider(initialProvider);
-      setModel(settings.defaultModel[initialProvider]);
+      setModel(settings.defaultModel[initialProvider] || MODELS[initialProvider][0]!.id);
     }
   }
 
@@ -122,19 +101,36 @@ export default function ChatView({ apiKeys }: Props) {
     }
   }
 
-  function handleProviderChange(next: Provider) {
+  async function handleProviderChange(next: Provider) {
     setProvider(next);
-    setModel(settings?.defaultModel?.[next] ?? MODELS[next][0]!.id);
+    const nextModel = settings?.defaultModel?.[next] ?? MODELS[next][0]!.id;
+    setModel(nextModel);
+
+    const currentSettings = settings ?? (await settingsStorage.getValue());
+    const updated: Settings = {
+      ...currentSettings,
+      defaultProvider: next,
+      defaultModel: {
+        ...currentSettings.defaultModel,
+        [next]: nextModel,
+      },
+    };
+    setSettings(updated);
+    await settingsStorage.setValue(updated).catch(() => {});
   }
 
-  async function handleToggleSiteExclusion() {
-    if (!settings || !hostname) return;
-    const next: Settings = {
-      ...settings,
-      siteDenylist: toggleSiteDenylist(settings.siteDenylist, hostname),
+  async function handleModelChange(nextModel: string) {
+    setModel(nextModel);
+    const currentSettings = settings ?? (await settingsStorage.getValue());
+    const updated: Settings = {
+      ...currentSettings,
+      defaultModel: {
+        ...currentSettings.defaultModel,
+        [provider]: nextModel,
+      },
     };
-    setSettings(next);
-    await settingsStorage.setValue(next);
+    setSettings(updated);
+    await settingsStorage.setValue(updated).catch(() => {});
   }
 
   async function handleCopy(index: number, content: string) {
@@ -224,66 +220,53 @@ export default function ChatView({ apiKeys }: Props) {
   return (
     <div className="chat">
       <div className="chat__toolbar">
-        <select
-          value={provider}
-          onChange={(e) => handleProviderChange(e.target.value as Provider)}
-          aria-label="Provider"
-        >
-          {availableProviders.map((p) => (
-            <option key={p} value={p}>
-              {PROVIDER_LABELS[p]}
-            </option>
-          ))}
-        </select>
-        <select value={model} onChange={(e) => setModel(e.target.value)} aria-label="Model">
-          {MODELS[provider].map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="icon-btn"
-          onClick={handleNewChat}
-          title="New chat"
-          aria-label="New chat"
-        >
-          <PlusIcon />
-        </button>
-        <button
-          type="button"
-          className="icon-btn"
-          onClick={() => setView('history')}
-          title="History"
-          aria-label="History"
-        >
-          <HistoryIcon />
-        </button>
-        {hostname && (
+        <div className="chat__model-selects">
+          <select
+            className="chat__select chat__select--provider"
+            value={provider}
+            onChange={(e) => handleProviderChange(e.target.value as Provider)}
+            aria-label="Provider"
+          >
+            {availableProviders.map((p) => (
+              <option key={p} value={p}>
+                {PROVIDER_LABELS[p]}
+              </option>
+            ))}
+          </select>
+          <select
+            className="chat__select chat__select--model"
+            value={model}
+            onChange={(e) => handleModelChange(e.target.value)}
+            aria-label="Model"
+          >
+            {MODELS[provider].map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="chat__toolbar-actions">
           <button
             type="button"
-            className={`icon-btn${siteExcluded ? ' icon-btn--muted' : ' icon-btn--active'}`}
-            onClick={handleToggleSiteExclusion}
-            title={siteExcluded ? `Enable on ${hostname}` : `Disable on ${hostname}`}
-            aria-label={
-              siteExcluded
-                ? `Enable rewriter on ${hostname}`
-                : `Disable rewriter on ${hostname}`
-            }
+            className="icon-btn"
+            onClick={handleNewChat}
+            title="New chat"
+            aria-label="New chat"
           >
-            <PowerIcon />
+            <PlusIcon size={14} />
           </button>
-        )}
-        <button
-          type="button"
-          className="icon-btn"
-          title="Settings"
-          aria-label="Settings"
-          onClick={() => browser.runtime.openOptionsPage()}
-        >
-          <GearIcon />
-        </button>
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={() => setView('history')}
+            title="History"
+            aria-label="History"
+          >
+            <HistoryIcon size={14} />
+          </button>
+        </div>
       </div>
 
       <div className="chat__messages" ref={messagesRef}>

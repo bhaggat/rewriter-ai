@@ -4,6 +4,8 @@ import { MODELS, PROVIDERS, DEFAULT_MODEL } from '@/lib/models';
 import type { Provider } from '@/lib/providers/types';
 import ApiKeyLabel from '@/components/ApiKeyLabel';
 import ValidateKeyButton from '@/components/ValidateKeyButton';
+import { HelpIcon } from '@/components/icons';
+import AboutModal from '@/components/AboutModal';
 
 interface Props {
   onDone: (keys: ApiKeys) => void;
@@ -14,6 +16,7 @@ export default function SetupView({ onDone }: Props) {
   const [models, setModels] = useState<Record<Provider, string>>({ ...DEFAULT_MODEL });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
 
   const canSave = PROVIDERS.some((provider) => keys[provider]?.trim());
 
@@ -48,10 +51,22 @@ export default function SetupView({ onDone }: Props) {
   return (
     <div className="setup">
       <div className="setup__header">
-        <img src="/icon/32.png" alt="" className="setup__logo" />
-        <h1>Welcome to Rewriter AI</h1>
+        <div className="setup__header-left">
+          <img src="/icon/32.png" alt="" className="setup__logo" />
+          <h1>Welcome to Rewriter AI</h1>
+        </div>
+        <button
+          type="button"
+          className="setup__info-btn"
+          onClick={() => setShowInfo(true)}
+          title="About Rewriter AI & Features"
+          aria-label="About Rewriter AI & Features"
+        >
+          <HelpIcon size={16} />
+        </button>
       </div>
       <p>Add at least one API key to get started. Keys are stored only on this device.</p>
+
 
       {PROVIDERS.map((provider) => (
         <div className="setup__provider" key={provider}>
@@ -87,6 +102,8 @@ export default function SetupView({ onDone }: Props) {
       <button type="button" disabled={!canSave || saving} onClick={handleSave}>
         {saving ? 'Saving…' : 'Save and start chatting'}
       </button>
+
+      <AboutModal isOpen={showInfo} onClose={() => setShowInfo(false)} />
     </div>
   );
 }

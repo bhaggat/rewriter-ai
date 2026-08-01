@@ -1,17 +1,57 @@
 export function isEditableField(target: EventTarget | null): target is HTMLElement {
-  if (!(target instanceof HTMLElement)) return false;
+  if (!target || !(target instanceof HTMLElement)) return false;
   if (target instanceof HTMLTextAreaElement) return true;
   if (target instanceof HTMLInputElement) {
-    return ['text', 'search', 'email', 'url'].includes(target.type.toLowerCase());
+    const nonTextInputTypes = [
+      'button',
+      'submit',
+      'reset',
+      'checkbox',
+      'radio',
+      'file',
+      'image',
+      'range',
+      'color',
+      'hidden',
+    ];
+    return !nonTextInputTypes.includes(target.type.toLowerCase());
   }
-  return target.isContentEditable;
+  if (target.isContentEditable) return true;
+
+  const attrCE = target.getAttribute('contenteditable');
+  if (attrCE !== null && attrCE !== 'false') return true;
+
+  const role = target.getAttribute('role');
+  if (role === 'textbox') return true;
+
+  return false;
+}
+
+export function getDeepActiveElement(): HTMLElement | null {
+  let active = document.activeElement;
+  while (active && active.shadowRoot && active.shadowRoot.activeElement) {
+    active = active.shadowRoot.activeElement;
+  }
+  return active instanceof HTMLElement ? active : null;
+}
+
+export function findEditableField(target: EventTarget | null): HTMLElement | null {
+  if (!target || !(target instanceof Element)) return null;
+  const el = target as Element;
+  if (isEditableField(el)) return el as HTMLElement;
+
+  const closest = el.closest('[contenteditable], [role="textbox"], input, textarea');
+  if (closest && isEditableField(closest)) {
+    return closest as HTMLElement;
+  }
+  return null;
 }
 
 export function getFieldText(field: HTMLElement): string {
   if (field instanceof HTMLTextAreaElement || field instanceof HTMLInputElement) {
     return field.value;
   }
-  return field.innerText;
+  return field.innerText || field.textContent || '';
 }
 
 export interface FieldSelection {

@@ -39,11 +39,22 @@ export default defineBackground(() => {
     return handleRequest(message);
   });
 
-  browser.commands.onCommand.addListener((command, tab) => {
-    if (command === 'trigger-rewrite' && tab?.id != null) {
-      browser.tabs.sendMessage(tab.id, { type: 'TRIGGER_REWRITE_SHORTCUT' }).catch(() => {
-        // No content script listening on this tab (e.g. a chrome:// page) — ignore.
-      });
+  browser.commands.onCommand.addListener(async (command, tab) => {
+    if (command === 'trigger-rewrite') {
+      let targetTabId = tab?.id;
+      if (targetTabId == null) {
+        try {
+          const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true });
+          targetTabId = activeTab?.id;
+        } catch {
+          // ignore tab query error
+        }
+      }
+      if (targetTabId != null) {
+        browser.tabs.sendMessage(targetTabId, { type: 'TRIGGER_REWRITE_SHORTCUT' }).catch(() => {
+          // No content script listening on this tab (e.g. a chrome:// page) — ignore.
+        });
+      }
     }
   });
 

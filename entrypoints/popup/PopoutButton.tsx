@@ -16,8 +16,9 @@ export default function PopoutButton() {
   return (
     <button
       type="button"
-      className="popout-button"
+      className="header-icon-btn popout-button"
       title={failed ? 'Could not open a separate window. Try again.' : 'Open in a separate window that stays open'}
+      aria-label="Open in popout window"
       onClick={handleClick}
     >
       ↗
