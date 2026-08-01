@@ -42,6 +42,9 @@ export default function RewriteWidget({ hostElement }: Props) {
   const [presets, setPresets] = useState<RewritePreset[]>([]);
   const [showIcon, setShowIcon] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  // Bounding rect of the actual input field (for width-matching the popover).
+  // Null when the anchor came from a selection range or screen-center fallback.
+  const [fieldRect, setFieldRect] = useState<DOMRect | null>(null);
   const [stage, setStage] = useState<Stage>('idle');
   const [resultText, setResultText] = useState('');
   const [errorText, setErrorText] = useState('');
@@ -63,6 +66,7 @@ export default function RewriteWidget({ hostElement }: Props) {
     setCustomInstruction('');
     setCopied(false);
     setRect(null);
+    setFieldRect(null);
     selectionRangeRef.current = null;
   }, []);
 
@@ -112,7 +116,9 @@ export default function RewriteWidget({ hostElement }: Props) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       const text = getFieldText(target);
       if (text.trim().length >= MIN_TEXT_LENGTH) {
-        setRect(target.getBoundingClientRect());
+        const fr = target.getBoundingClientRect();
+        setRect(fr);
+        setFieldRect(fr);
         setShowIcon(true);
       } else {
         setShowIcon(false);
@@ -147,7 +153,9 @@ export default function RewriteWidget({ hostElement }: Props) {
       debounceRef.current = setTimeout(() => {
         const text = getFieldText(target);
         if (text.trim().length >= MIN_TEXT_LENGTH) {
-          setRect(target.getBoundingClientRect());
+          const fr = target.getBoundingClientRect();
+          setRect(fr);
+          setFieldRect(fr);
           setShowIcon(true);
         } else {
           setShowIcon(false);
@@ -176,7 +184,9 @@ export default function RewriteWidget({ hostElement }: Props) {
 
     function handleReposition() {
       if (activeFieldRef.current && (showIcon || stage !== 'idle')) {
-        setRect(activeFieldRef.current.getBoundingClientRect());
+        const fr = activeFieldRef.current.getBoundingClientRect();
+        setRect(fr);
+        setFieldRect(fr);
       }
     }
 
@@ -293,6 +303,9 @@ export default function RewriteWidget({ hostElement }: Props) {
     if (isExcluded) return;
 
     const deepActive = getDeepActiveElement();
+
+    // Resolve target field — prefer currently focused element, fall back to last
+    // known field so the shortcut works even after the user clicks elsewhere.
     const targetField =
       findEditableField(deepActive) ||
       findEditableField(document.activeElement) ||
@@ -305,24 +318,35 @@ export default function RewriteWidget({ hostElement }: Props) {
     }
 
     let selectionText = '';
+    // ── Step 1: anchor rect from the field itself (most reliable) ──────────
+    // We capture this immediately so we always have a field-relative rect even
+    // if the selection rect later turns out to be zero-sized.
+    let fieldRect: DOMRect | null =
+      targetField && targetField instanceof HTMLElement
+        ? targetField.getBoundingClientRect()
+        : null;
+    if (fieldRect && fieldRect.width === 0 && fieldRect.height === 0) fieldRect = null;
+
     let targetRect: DOMRect | null = null;
 
+    // ── Step 2: try to get selection bounds (more precise anchor for selections)
     if (targetField) {
       const sel = getFieldSelection(targetField);
       if (sel?.text) {
         selectionRangeRef.current = sel;
         selectionText = sel.text;
-        targetRect =
-          sel.range && sel.range.getBoundingClientRect().height > 0
-            ? sel.range.getBoundingClientRect()
-            : targetField.getBoundingClientRect();
+        // Use selection range rect only when it has actual size
+        if (sel.range) {
+          const rr = sel.range.getBoundingClientRect();
+          if (rr.width > 0 || rr.height > 0) targetRect = rr;
+        }
       } else {
         selectionRangeRef.current = null;
         selectionText = getFieldText(targetField);
-        targetRect = targetField.getBoundingClientRect();
       }
     }
 
+    // ── Step 3: check window selection (for contenteditable / non-input fields)
     if (!selectionText.trim()) {
       const winSel = window.getSelection();
       if (winSel && !winSel.isCollapsed && winSel.rangeCount > 0) {
@@ -331,13 +355,17 @@ export default function RewriteWidget({ hostElement }: Props) {
         if (text) {
           selectionText = text;
           selectionRangeRef.current = { text, range: range.cloneRange() };
-          targetRect = range.getBoundingClientRect();
+          if (!targetRect) {
+            const rr = range.getBoundingClientRect();
+            if (rr.width > 0 || rr.height > 0) targetRect = rr;
+          }
         }
       }
     }
 
-    if ((!targetRect || (targetRect.width === 0 && targetRect.height === 0)) && targetField) {
-      targetRect = targetField.getBoundingClientRect();
+    // ── Step 4: fall back to field rect, then deepActive rect, then center ──
+    if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
+      targetRect = fieldRect;
     }
 
     if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
@@ -356,6 +384,7 @@ export default function RewriteWidget({ hostElement }: Props) {
       }
     }
 
+    // ── Step 5: absolute last resort — center on screen ────────────────────
     if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
       const w = POPOVER_WIDTH;
       const h = 40;
@@ -365,6 +394,9 @@ export default function RewriteWidget({ hostElement }: Props) {
     }
 
     setRect(targetRect);
+    // Store the field rect separately so the render can match popover width to it.
+    // Only set it when we actually have a real field (not a synthetic center rect).
+    setFieldRect(fieldRect);
     setShowIcon(true);
 
     if (selectionText.trim() && settings?.defaultWritingStyle) {
@@ -396,7 +428,9 @@ export default function RewriteWidget({ hostElement }: Props) {
           activeFieldRef.current ||
           lastFieldRef.current;
 
-        if (editableTarget || hasSelection || isEditableField(deepActive) || isEditableField(document.activeElement)) {
+        // Always fire if there's any editable target (incl. remembered last field)
+        // or a live text selection — do NOT require the field to be focused right now.
+        if (editableTarget || hasSelection) {
           e.preventDefault();
           e.stopPropagation();
           triggerRewrite();
@@ -519,20 +553,30 @@ export default function RewriteWidget({ hostElement }: Props) {
   const spaceBelow = viewHeight - rect.bottom;
   const spaceAbove = rect.top;
 
+  const openUpward = !(spaceBelow >= POPOVER_MAX_HEIGHT + ICON_GAP || spaceBelow >= spaceAbove);
+
   let targetPanelTop: number;
-  if (spaceBelow >= POPOVER_MAX_HEIGHT + ICON_GAP || spaceBelow >= spaceAbove) {
+  if (!openUpward) {
     targetPanelTop = rect.bottom + ICON_GAP;
   } else {
     targetPanelTop = rect.top - POPOVER_MAX_HEIGHT - ICON_GAP;
   }
 
   const panelTop = clamp(targetPanelTop, padding, Math.max(padding, viewHeight - POPOVER_MAX_HEIGHT - padding));
-  const panelLeft = clamp(rect.right - POPOVER_WIDTH, padding, Math.max(padding, viewWidth - POPOVER_WIDTH - padding));
 
-  const openUpward = targetPanelTop < rect.top;
+  // ── Width & horizontal position ──────────────────────────────────────────
+  // If we have a real field rect with usable width, size the popover to match
+  // the field and left-align it. Otherwise fall back to fixed-width right-align.
+  const hasFieldWidth = fieldRect && fieldRect.width >= POPOVER_WIDTH * 0.5;
+  const panelWidth = hasFieldWidth ? fieldRect!.width : POPOVER_WIDTH;
+  const panelLeft = hasFieldWidth
+    ? clamp(fieldRect!.left, padding, Math.max(padding, viewWidth - panelWidth - padding))
+    : clamp(rect.right - POPOVER_WIDTH, padding, Math.max(padding, viewWidth - POPOVER_WIDTH - padding));
+
+  // Icon sits at the right edge of the popover
   const targetIconTop = openUpward ? rect.top - ICON_SIZE - ICON_GAP : rect.bottom + ICON_GAP;
   const iconTop = clamp(targetIconTop, padding, Math.max(padding, viewHeight - ICON_SIZE - padding));
-  const iconLeft = clamp(rect.right - ICON_SIZE, padding, Math.max(padding, viewWidth - ICON_SIZE - padding));
+  const iconLeft = clamp(panelLeft + panelWidth - ICON_SIZE, padding, Math.max(padding, viewWidth - ICON_SIZE - padding));
 
   return (
     <div className="rw-root">
@@ -556,7 +600,7 @@ export default function RewriteWidget({ hostElement }: Props) {
       ) : (
         <div
           className="rw-popover"
-          style={{ top: `${panelTop}px`, left: `${panelLeft}px`, width: `${POPOVER_WIDTH}px` }}
+          style={{ top: `${panelTop}px`, left: `${panelLeft}px`, width: `${panelWidth}px` }}
         >
           {/* Header bar */}
           <div className="rw-popover__header">
