@@ -11,7 +11,7 @@ export default defineConfig({
   manifest: {
     name: 'Rewriter AI',
     description:
-      'Rewrite text inline on any site and chat with OpenAI, Gemini, Claude, Grok, Groq, Mistral, or OpenRouter, using your own API keys.',
+      'Inline AI text assistant to rewrite, refine, or summarize text on any webpage using your own API keys.',
     icons: {
       16: 'icon/16.png',
       32: 'icon/32.png',
