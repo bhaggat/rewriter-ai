@@ -23,12 +23,12 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const APP_LOGO_SVG = (size = 32) => `
 <svg width="${size}" height="${size}" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="app-logo-bg-${size}" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+    <linearGradient id="app-logo-bg-new-${size}" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#3b82f6"/>
       <stop offset="1" stop-color="#1d4ed8"/>
     </linearGradient>
   </defs>
-  <rect width="128" height="128" rx="28" ry="28" fill="url(#app-logo-bg-${size})"/>
+  <rect width="128" height="128" rx="28" ry="28" fill="url(#app-logo-bg-new-${size})"/>
   <g transform="translate(64,68) rotate(-45)">
     <rect x="-38" y="-8" width="52" height="16" fill="#ffffff"/>
     <path d="M14,-8 L14,8 L30,0 Z" fill="#ffffff"/>
@@ -49,11 +49,9 @@ async function generateAllAssets() {
   await page.setViewport({
     width: 1280,
     height: 800,
-    deviceScaleFactor: 2, // 2x Retina resolution for crisp rendering
+    deviceScaleFactor: 2,
   });
 
-  // Theme matching theme.css variables:
-  // --bg: #121118; --surface: #17151f; --surface-raised: #1d1b27; --border: #2b2937; --accent: #a78bfa; --accent-strong: #8b5cf6
   const baseCss = `
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
@@ -101,7 +99,6 @@ async function generateAllAssets() {
       position: relative;
     }
 
-    /* Ambient Decorative Sparkles */
     .bg-sparkle {
       position: absolute;
       pointer-events: none;
@@ -111,7 +108,6 @@ async function generateAllAssets() {
     .sp-2 { top: 35px; right: 480px; font-size: 20px; color: rgba(59, 130, 246, 0.6); filter: drop-shadow(0 0 10px rgba(59,130,246,0.8)); }
     .sp-3 { bottom: 30px; left: 50px; font-size: 24px; color: rgba(16, 185, 129, 0.6); filter: drop-shadow(0 0 12px rgba(16,185,129,0.8)); }
 
-    /* Top Header Banner */
     .header-banner {
       width: 100%;
       display: flex;
@@ -205,7 +201,6 @@ async function generateAllAssets() {
       background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), var(--surface));
     }
 
-    /* Browser Frame Mockup */
     .browser-frame {
       width: 100%;
       flex: 1;
@@ -273,7 +268,6 @@ async function generateAllAssets() {
       overflow: hidden;
     }
 
-    /* Feature Callout Annotation */
     .feature-annotation {
       position: absolute;
       z-index: 200;

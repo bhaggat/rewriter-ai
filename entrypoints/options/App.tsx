@@ -364,7 +364,7 @@ export default function App() {
           </div>
           <p className="options__shortcut-note">
             Focuses the current text field and opens the rewrite picker (or auto-applies your
-            default writing style if one is set above).
+            default writing style if one is set above). You can also right-click on any input or text selection to trigger rewriting directly from the context menu.
             Click "Change Shortcut" above to customize this key combination in your browser settings.
           </p>
         </div>

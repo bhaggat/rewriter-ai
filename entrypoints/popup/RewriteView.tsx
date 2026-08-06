@@ -21,7 +21,21 @@ import {
   CheckIcon,
   CopyIcon,
   LogoIcon,
+  SparklesIcon,
+  DiffIcon,
+  ListBulletIcon,
+  ListNumberIcon,
+  TextCaseIcon,
+  EraserIcon,
 } from '@/components/icons';
+import {
+  cleanWhitespace,
+  computeTextDiff,
+  formatAsBulletList,
+  formatAsNumberedList,
+  getTextMetrics,
+  toTitleCase,
+} from '@/lib/textFormatters';
 
 import { useShortcutInfo } from '@/lib/shortcuts';
 
@@ -45,6 +59,8 @@ export default function RewriteView({ apiKeys }: Props) {
   const [copied, setCopied] = useState(false);
   const [canInsert, setCanInsert] = useState(false);
   const [insertDone, setInsertDone] = useState(false);
+  const [deepPolish, setDeepPolish] = useState(false);
+  const [showDiff, setShowDiff] = useState(false);
 
   const availableProviders = useMemo(
     () => PROVIDERS.filter((p) => Boolean(apiKeys[p])),
@@ -52,6 +68,10 @@ export default function RewriteView({ apiKeys }: Props) {
   );
 
   const originalRef = useRef<HTMLTextAreaElement>(null);
+
+  const originalMetrics = useMemo(() => getTextMetrics(original), [original]);
+  const resultMetrics = useMemo(() => getTextMetrics(result), [result]);
+  const diffParts = useMemo(() => computeTextDiff(original, result), [original, result]);
 
   // ── Load settings + presets + last style ──────────────────────────────────
   useEffect(() => {
@@ -179,6 +199,7 @@ export default function RewriteView({ apiKeys }: Props) {
       model: targetModel,
       text: targetText,
       instruction: targetInstruction,
+      deepPolish,
     };
 
     try {
@@ -264,6 +285,17 @@ export default function RewriteView({ apiKeys }: Props) {
             ))}
           </select>
         </div>
+
+        {/* Deep Polish Toggle */}
+        <button
+          type="button"
+          className={`rewrite__polish-toggle ${deepPolish ? 'rewrite__polish-toggle--active' : ''}`}
+          onClick={() => setDeepPolish(!deepPolish)}
+          title={deepPolish ? 'Smart Polish enabled (High-precision reasoning)' : 'Enable Smart Polish for deep reasoning & crisp structure'}
+        >
+          <SparklesIcon size={12} />
+          <span>{deepPolish ? 'Smart Thinking' : 'Fast'}</span>
+        </button>
       </div>
 
       {/* Default style indicator */}
@@ -297,19 +329,71 @@ export default function RewriteView({ apiKeys }: Props) {
 
       {/* Original input */}
       <div className="rewrite__section">
-        <label className="rewrite__label" htmlFor="rw-original">
-          Your text
-        </label>
+        <div className="rewrite__section-header">
+          <label className="rewrite__label" htmlFor="rw-original">
+            Your text
+          </label>
+
+          {/* Instant Format Quick Actions Toolbar */}
+          {original.trim() && (
+            <div className="rewrite__quick-format">
+              <button
+                type="button"
+                className="rewrite__format-btn"
+                onClick={() => setOriginal(toTitleCase(original))}
+                title="Title Case"
+              >
+                <TextCaseIcon size={12} /> Title
+              </button>
+              <button
+                type="button"
+                className="rewrite__format-btn"
+                onClick={() => setOriginal(formatAsBulletList(original))}
+                title="Format as Bullet List"
+              >
+                <ListBulletIcon size={12} /> Bullets
+              </button>
+              <button
+                type="button"
+                className="rewrite__format-btn"
+                onClick={() => setOriginal(formatAsNumberedList(original))}
+                title="Format as Numbered List"
+              >
+                <ListNumberIcon size={12} /> Numbers
+              </button>
+              <button
+                type="button"
+                className="rewrite__format-btn"
+                onClick={() => setOriginal(cleanWhitespace(original))}
+                title="Clean Spaces & Lines"
+              >
+                <EraserIcon size={12} /> Clean
+              </button>
+            </div>
+          )}
+        </div>
+
         <textarea
           id="rw-original"
           ref={originalRef}
           className="rewrite__original"
           value={original}
           onChange={(e) => setOriginal(e.target.value)}
-          placeholder="Paste or type the text you want to rewrite…"
+          placeholder="Paste or type text to format or rewrite with AI…"
           rows={4}
           disabled={stage === 'loading'}
         />
+
+        {/* Live Text Metrics */}
+        {originalMetrics.words > 0 && (
+          <div className="rewrite__metrics-row">
+            <span>{originalMetrics.words} words</span>
+            <span>•</span>
+            <span>{originalMetrics.characters} chars</span>
+            <span>•</span>
+            <span>~{originalMetrics.readingTimeSeconds}s read</span>
+          </div>
+        )}
       </div>
 
       {/* Preset chips */}
@@ -370,7 +454,7 @@ export default function RewriteView({ apiKeys }: Props) {
           <span className="rewrite__loading-dot" />
           <span className="rewrite__loading-dot" />
           <span className="rewrite__loading-dot" />
-          <span>Rewriting…</span>
+          <span>{deepPolish ? 'Thinking & Polishing…' : 'Rewriting…'}</span>
         </div>
       )}
 
@@ -379,17 +463,60 @@ export default function RewriteView({ apiKeys }: Props) {
         <div className="rewrite__result-section">
           <div className="rewrite__result-header">
             <span className="rewrite__label">Result</span>
-            <button
-              type="button"
-              className="rewrite__result-copy-icon"
-              onClick={handleCopy}
-              title={copied ? 'Copied!' : 'Copy result'}
-              aria-label={copied ? 'Copied!' : 'Copy result'}
-            >
-              {copied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
-            </button>
+
+            <div className="rewrite__result-header-actions">
+              <button
+                type="button"
+                className={`rewrite__diff-toggle ${showDiff ? 'rewrite__diff-toggle--active' : ''}`}
+                onClick={() => setShowDiff(!showDiff)}
+                title="Toggle Text Diff comparison"
+              >
+                <DiffIcon size={12} /> {showDiff ? 'Diff' : 'Diff'}
+              </button>
+              <button
+                type="button"
+                className="rewrite__result-copy-icon"
+                onClick={handleCopy}
+                title={copied ? 'Copied!' : 'Copy result'}
+                aria-label={copied ? 'Copied!' : 'Copy result'}
+              >
+                {copied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
+              </button>
+            </div>
           </div>
-          <div className="rewrite__result-box">{result}</div>
+
+          {/* Result Box or Diff Box */}
+          {showDiff ? (
+            <div className="rewrite__diff-box">
+              {diffParts.map((part, idx) => (
+                <span
+                  key={idx}
+                  className={
+                    part.added
+                      ? 'rewrite__diff-added'
+                      : part.removed
+                        ? 'rewrite__diff-removed'
+                        : ''
+                  }
+                >
+                  {part.value}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div className="rewrite__result-box">{result}</div>
+          )}
+
+          {/* Live Result Metrics */}
+          {resultMetrics.words > 0 && (
+            <div className="rewrite__metrics-row">
+              <span>{resultMetrics.words} words</span>
+              <span>•</span>
+              <span>{resultMetrics.characters} chars</span>
+              <span>•</span>
+              <span>~{resultMetrics.readingTimeSeconds}s read</span>
+            </div>
+          )}
 
           {/* Preset chips in result view for quick style switching */}
           <div className="rewrite__presets" style={{ marginTop: '4px' }}>
@@ -431,6 +558,7 @@ export default function RewriteView({ apiKeys }: Props) {
                 setStage('compose');
                 setResult('');
                 setError(null);
+                setShowDiff(false);
               }}
             >
               Try again

@@ -122,3 +122,64 @@ export function CloseIcon({ size = 16, className }: IconProps) {
   );
 }
 
+export function WandIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M10 2l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM3 9l1.5 3L6 13.5 4.5 15 3 18 1.5 15 0 13.5 1.5 12z" {...common} />
+      <path d="M2.5 13.5l11-11" {...common} />
+    </svg>
+  );
+}
+
+export function SparklesIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M8 1v4M8 11v4M1 8h4M11 8h4M3 3l2.8 2.8M10.2 10.2L13 13M13 3l-2.8 2.8M5.8 10.2L3 13" {...common} />
+    </svg>
+  );
+}
+
+export function DiffIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M2 4h12M2 8h8M2 12h12M12 7v4M10 9h4" {...common} />
+    </svg>
+  );
+}
+
+export function ListBulletIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M6 3.5h7.5M6 8h7.5M6 12.5h7.5" {...common} />
+      <circle cx="2.5" cy="3.5" r="1" fill="currentColor" />
+      <circle cx="2.5" cy="8" r="1" fill="currentColor" />
+      <circle cx="2.5" cy="12.5" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function ListNumberIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M7 3.5h6.5M7 8h6.5M7 12.5h6.5M2 2v3M4 5H2M2 8.5h2V10H2v1.5h2" {...common} />
+    </svg>
+  );
+}
+
+export function TextCaseIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M2 13V4.5L5.5 13M3 10h2M10.5 13v-5M13.5 13V8M10.5 10.5h3" {...common} />
+    </svg>
+  );
+}
+
+export function EraserIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M12.5 9.5l-6 5h-4l-1-1 3.5-4M5 4.5L11.5 11l-3 2.5L2 7z" {...common} />
+    </svg>
+  );
+}
+
+

@@ -18,7 +18,7 @@ export default defineConfig({
       48: 'icon/48.png',
       128: 'icon/128.png',
     },
-    permissions: ['storage', 'activeTab'],
+    permissions: ['storage', 'activeTab', 'contextMenus'],
     host_permissions: [
       'https://api.openai.com/*',
       'https://generativelanguage.googleapis.com/*',

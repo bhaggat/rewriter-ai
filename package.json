@@ -1,13 +1,20 @@
 {
   "name": "rewriter-ai",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.3",
   "type": "module",
   "scripts": {
     "dev": "wxt",
     "build": "tsc --noEmit && wxt build",
     "zip": "wxt zip",
     "submit": "wxt submit --chrome-extension-id dfeikdphcfjnkdeolkcnblpdokkcddlm",
+    "deploy": "node scripts/deploy.js",
+    "deploy:patch": "node scripts/deploy.js patch",
+    "deploy:minor": "node scripts/deploy.js minor",
+    "deploy:major": "node scripts/deploy.js major",
+    "deploy:dry-run": "node scripts/deploy.js --dry-run",
+    "upload": "node scripts/deploy.js --skip-submit",
+    "screenshots": "node scripts/generate-screenshots.js",
     "lint": "eslint .",
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare"

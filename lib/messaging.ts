@@ -13,6 +13,7 @@ export interface RewriteRequest {
   model: string;
   text: string;
   instruction: string;
+  deepPolish?: boolean;
 }
 
 export type BackgroundRequest = ChatRequest | RewriteRequest;
@@ -21,6 +22,11 @@ export type BackgroundResponse = { ok: true; result: string } | { ok: false; err
 
 export interface TriggerRewriteShortcutMessage {
   type: 'TRIGGER_REWRITE_SHORTCUT';
+}
+
+export interface TriggerRewriteContextMenuMessage {
+  type: 'TRIGGER_REWRITE_CONTEXT_MENU';
+  instruction?: string;
 }
 
 export interface GetSelectionMessage {

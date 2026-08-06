@@ -80,6 +80,16 @@ export default function AboutModal({ isOpen, onClose }: Props) {
               </div>
 
               <div className="about-modal-feature">
+                <div className="about-modal-feature-icon">🖱️</div>
+                <div>
+                  <strong>Right-Click Context Menu</strong>
+                  <p>
+                    Right-click any input field or selected text on a webpage to open the rewriter widget or run your preset tones directly.
+                  </p>
+                </div>
+              </div>
+
+              <div className="about-modal-feature">
                 <div className="about-modal-feature-icon">🤖</div>
                 <div>
                   <strong>Multi-Provider AI Choice</strong>

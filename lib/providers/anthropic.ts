@@ -66,7 +66,7 @@ async function validateKey(apiKey: string): Promise<ValidateKeyResult> {
 
 export const anthropicClient: ProviderClient = {
   chat,
-  rewrite: (apiKey, model, text, instruction) =>
-    chat(apiKey, model, buildRewriteMessages(text, instruction)),
+  rewrite: (apiKey, model, text, instruction, deepPolish) =>
+    chat(apiKey, model, buildRewriteMessages(text, instruction, deepPolish)),
   validateKey,
 };

@@ -20,9 +20,11 @@ import type {
   HasEditableFieldMessage,
   InsertTextMessage,
   RewriteRequest,
+  TriggerRewriteContextMenuMessage,
   TriggerRewriteShortcutMessage,
 } from '@/lib/messaging';
-import { CopyIcon, CheckIcon, LogoIcon } from '@/components/icons';
+import { CopyIcon, CheckIcon, LogoIcon, DiffIcon } from '@/components/icons';
+import { computeTextDiff } from '@/lib/textFormatters';
 
 const MIN_TEXT_LENGTH = 8;
 const TYPING_DEBOUNCE_MS = 500;
@@ -47,6 +49,7 @@ export default function RewriteWidget({ hostElement }: Props) {
   const [fieldRect, setFieldRect] = useState<DOMRect | null>(null);
   const [stage, setStage] = useState<Stage>('idle');
   const [resultText, setResultText] = useState('');
+  const [originalText, setOriginalText] = useState('');
   const [errorText, setErrorText] = useState('');
   const [customInstruction, setCustomInstruction] = useState('');
   const [copied, setCopied] = useState(false);
@@ -55,16 +58,27 @@ export default function RewriteWidget({ hostElement }: Props) {
   // Tracks the very last field that was ever focused — used by the popup to
   // insert text back even after focus has moved away.
   const lastFieldRef = useRef<HTMLElement | null>(null);
+  // Tracks the element that was right-clicked for context menu actions.
+  const rightClickFieldRef = useRef<HTMLElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const selectionRangeRef = useRef<FieldSelection | null>(null);
+
+  const [showDiff, setShowDiff] = useState(false);
+
+  const diffParts = useMemo(
+    () => computeTextDiff(originalText, resultText),
+    [originalText, resultText],
+  );
 
   const resetWidget = useCallback(() => {
     setShowIcon(false);
     setStage('idle');
     setResultText('');
+    setOriginalText('');
     setErrorText('');
     setCustomInstruction('');
     setCopied(false);
+    setShowDiff(false);
     setRect(null);
     setFieldRect(null);
     selectionRangeRef.current = null;
@@ -171,6 +185,17 @@ export default function RewriteWidget({ hostElement }: Props) {
       }
     }
 
+    function handleContextMenu(event: MouseEvent) {
+      const target = findEditableField(event.target);
+      if (target) {
+        rightClickFieldRef.current = target;
+        activeFieldRef.current = target;
+        lastFieldRef.current = target;
+        const sel = getFieldSelection(target);
+        if (sel) selectionRangeRef.current = sel;
+      }
+    }
+
     function handleSelectionChange() {
       const deepActive = getDeepActiveElement();
       const target = findEditableField(deepActive) || findEditableField(document.activeElement);
@@ -194,6 +219,7 @@ export default function RewriteWidget({ hostElement }: Props) {
     document.addEventListener('focusout', handleFocusOut, true);
     document.addEventListener('input', handleInput, true);
     document.addEventListener('pointerdown', handleFieldPointerDown, true);
+    document.addEventListener('contextmenu', handleContextMenu, true);
     document.addEventListener('selectionchange', handleSelectionChange, true);
     window.addEventListener('scroll', handleReposition, true);
     window.addEventListener('resize', handleReposition);
@@ -203,6 +229,7 @@ export default function RewriteWidget({ hostElement }: Props) {
       document.removeEventListener('focusout', handleFocusOut, true);
       document.removeEventListener('input', handleInput, true);
       document.removeEventListener('pointerdown', handleFieldPointerDown, true);
+      document.removeEventListener('contextmenu', handleContextMenu, true);
       document.removeEventListener('selectionchange', handleSelectionChange, true);
       window.removeEventListener('scroll', handleReposition, true);
       window.removeEventListener('resize', handleReposition);
@@ -254,6 +281,8 @@ export default function RewriteWidget({ hostElement }: Props) {
 
       if (!text.trim()) return;
 
+      setOriginalText(text);
+
       if (instruction.trim()) {
         lastWritingStyleStorage.setValue(instruction.trim()).catch(() => {});
       }
@@ -297,117 +326,121 @@ export default function RewriteWidget({ hostElement }: Props) {
     }
   }, []);
 
-  // ─── Trigger Shortcut Handler ─────────────────────────────────────────────
+  // ─── Trigger Rewrite / Shortcut / Context Menu Handler ──────────────────
 
-  const triggerRewrite = useCallback(() => {
-    if (isExcluded) return;
+  const triggerRewrite = useCallback(
+    (overrideInstruction?: string) => {
+      if (isExcluded) return;
 
-    const deepActive = getDeepActiveElement();
+      const deepActive = getDeepActiveElement();
 
-    // Resolve target field — prefer currently focused element, fall back to last
-    // known field so the shortcut works even after the user clicks elsewhere.
-    const targetField =
-      findEditableField(deepActive) ||
-      findEditableField(document.activeElement) ||
-      activeFieldRef.current ||
-      lastFieldRef.current;
+      // Resolve target field — prefer right-clicked element, currently focused element, or last known field
+      const targetField =
+        (rightClickFieldRef.current && rightClickFieldRef.current.isConnected ? rightClickFieldRef.current : null) ||
+        findEditableField(deepActive) ||
+        findEditableField(document.activeElement) ||
+        activeFieldRef.current ||
+        lastFieldRef.current;
 
-    if (targetField) {
-      activeFieldRef.current = targetField;
-      lastFieldRef.current = targetField;
-    }
-
-    let selectionText = '';
-    // ── Step 1: anchor rect from the field itself (most reliable) ──────────
-    // We capture this immediately so we always have a field-relative rect even
-    // if the selection rect later turns out to be zero-sized.
-    let fieldRect: DOMRect | null =
-      targetField && targetField instanceof HTMLElement
-        ? targetField.getBoundingClientRect()
-        : null;
-    if (fieldRect && fieldRect.width === 0 && fieldRect.height === 0) fieldRect = null;
-
-    let targetRect: DOMRect | null = null;
-
-    // ── Step 2: try to get selection bounds (more precise anchor for selections)
-    if (targetField) {
-      const sel = getFieldSelection(targetField);
-      if (sel?.text) {
-        selectionRangeRef.current = sel;
-        selectionText = sel.text;
-        // Use selection range rect only when it has actual size
-        if (sel.range) {
-          const rr = sel.range.getBoundingClientRect();
-          if (rr.width > 0 || rr.height > 0) targetRect = rr;
-        }
-      } else {
-        selectionRangeRef.current = null;
-        selectionText = getFieldText(targetField);
+      if (targetField) {
+        activeFieldRef.current = targetField;
+        lastFieldRef.current = targetField;
       }
-    }
 
-    // ── Step 3: check window selection (for contenteditable / non-input fields)
-    if (!selectionText.trim()) {
-      const winSel = window.getSelection();
-      if (winSel && !winSel.isCollapsed && winSel.rangeCount > 0) {
-        const range = winSel.getRangeAt(0);
-        const text = range.toString().trim();
-        if (text) {
-          selectionText = text;
-          selectionRangeRef.current = { text, range: range.cloneRange() };
-          if (!targetRect) {
-            const rr = range.getBoundingClientRect();
+      let selectionText = '';
+      // ── Step 1: anchor rect from the field itself (most reliable) ──────────
+      let fieldRect: DOMRect | null =
+        targetField && targetField instanceof HTMLElement
+          ? targetField.getBoundingClientRect()
+          : null;
+      if (fieldRect && fieldRect.width === 0 && fieldRect.height === 0) fieldRect = null;
+
+      let targetRect: DOMRect | null = null;
+
+      // ── Step 2: try to get selection bounds (more precise anchor for selections)
+      if (targetField) {
+        const sel = getFieldSelection(targetField);
+        if (sel?.text) {
+          selectionRangeRef.current = sel;
+          selectionText = sel.text;
+          // Use selection range rect only when it has actual size
+          if (sel.range) {
+            const rr = sel.range.getBoundingClientRect();
             if (rr.width > 0 || rr.height > 0) targetRect = rr;
+          }
+        } else {
+          selectionRangeRef.current = null;
+          selectionText = getFieldText(targetField);
+        }
+      }
+
+      // ── Step 3: check window selection (for contenteditable / non-input fields)
+      if (!selectionText.trim()) {
+        const winSel = window.getSelection();
+        if (winSel && !winSel.isCollapsed && winSel.rangeCount > 0) {
+          const range = winSel.getRangeAt(0);
+          const text = range.toString().trim();
+          if (text) {
+            selectionText = text;
+            selectionRangeRef.current = { text, range: range.cloneRange() };
+            if (!targetRect) {
+              const rr = range.getBoundingClientRect();
+              if (rr.width > 0 || rr.height > 0) targetRect = rr;
+            }
           }
         }
       }
-    }
 
-    // ── Step 4: fall back to field rect, then deepActive rect, then center ──
-    if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
-      targetRect = fieldRect;
-    }
-
-    if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
-      const winSel = window.getSelection();
-      if (winSel && winSel.rangeCount > 0) {
-        const r = winSel.getRangeAt(0).getBoundingClientRect();
-        if (r.width > 0 || r.height > 0) targetRect = r;
+      // ── Step 4: fall back to field rect, then deepActive rect, then center ──
+      if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
+        targetRect = fieldRect;
       }
-    }
 
-    if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
-      const activeEl = getDeepActiveElement() || document.activeElement;
-      if (activeEl && activeEl instanceof HTMLElement) {
-        const r = activeEl.getBoundingClientRect();
-        if (r.width > 0 || r.height > 0) targetRect = r;
+      if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
+        const winSel = window.getSelection();
+        if (winSel && winSel.rangeCount > 0) {
+          const r = winSel.getRangeAt(0).getBoundingClientRect();
+          if (r.width > 0 || r.height > 0) targetRect = r;
+        }
       }
-    }
 
-    // ── Step 5: absolute last resort — center on screen ────────────────────
-    if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
-      const w = POPOVER_WIDTH;
-      const h = 40;
-      const left = Math.max(10, (window.innerWidth - w) / 2);
-      const top = Math.max(10, window.innerHeight / 3);
-      targetRect = new DOMRect(left, top, w, h);
-    }
+      if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
+        const activeEl = getDeepActiveElement() || document.activeElement;
+        if (activeEl && activeEl instanceof HTMLElement) {
+          const r = activeEl.getBoundingClientRect();
+          if (r.width > 0 || r.height > 0) targetRect = r;
+        }
+      }
 
-    setRect(targetRect);
-    // Store the field rect separately so the render can match popover width to it.
-    // Only set it when we actually have a real field (not a synthetic center rect).
-    setFieldRect(fieldRect);
-    setShowIcon(true);
+      // ── Step 5: absolute last resort — center on screen ────────────────────
+      if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
+        const w = POPOVER_WIDTH;
+        const h = 40;
+        const left = Math.max(10, (window.innerWidth - w) / 2);
+        const top = Math.max(10, window.innerHeight / 3);
+        targetRect = new DOMRect(left, top, w, h);
+      }
 
-    if (selectionText.trim() && settings?.defaultWritingStyle) {
-      const instruction = resolveInstruction(settings, presets);
-      if (instruction) {
-        runRewrite(instruction, selectionText);
+      setRect(targetRect);
+      setFieldRect(fieldRect);
+      setShowIcon(true);
+
+      if (overrideInstruction?.trim()) {
+        runRewrite(overrideInstruction.trim(), selectionText);
         return;
       }
-    }
-    setStage('presets');
-  }, [isExcluded, settings, presets, runRewrite]);
+
+      if (selectionText.trim() && settings?.defaultWritingStyle) {
+        const instruction = resolveInstruction(settings, presets);
+        if (instruction) {
+          runRewrite(instruction, selectionText);
+          return;
+        }
+      }
+      setStage('presets');
+    },
+    [isExcluded, settings, presets, runRewrite],
+  );
 
   // ─── Keyboard shortcut direct listener ────────────────────────────────────
 
@@ -447,12 +480,18 @@ export default function RewriteWidget({ hostElement }: Props) {
     function handleMessage(
       message:
         | TriggerRewriteShortcutMessage
+        | TriggerRewriteContextMenuMessage
         | InsertTextMessage
         | HasEditableFieldMessage,
     ) {
-      // ── TRIGGER_REWRITE_SHORTCUT ──────────────────────────────────────
+      // ── TRIGGER_REWRITE_SHORTCUT / CONTEXT_MENU ───────────────────────
       if (message.type === 'TRIGGER_REWRITE_SHORTCUT') {
         triggerRewrite();
+        return;
+      }
+
+      if (message.type === 'TRIGGER_REWRITE_CONTEXT_MENU') {
+        triggerRewrite((message as TriggerRewriteContextMenuMessage).instruction);
         return;
       }
 
@@ -668,18 +707,48 @@ export default function RewriteWidget({ hostElement }: Props) {
           {stage === 'result' && (
             <>
               <div className="rw-popover__result-wrapper">
-                <div className="rw-popover__result">{resultText}</div>
-                {/* Copy icon overlaid on result box */}
-                <button
-                  type="button"
-                  className="rw-popover__result-copy"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={handleCopy}
-                  aria-label={copied ? 'Copied!' : 'Copy result'}
-                  title={copied ? 'Copied!' : 'Copy result'}
-                >
-                  {copied ? <CheckIcon size={12} /> : <CopyIcon size={12} />}
-                </button>
+                {showDiff ? (
+                  <div className="rw-popover__result rw-popover__result--diff">
+                    {diffParts.map((part, idx) => (
+                      <span
+                        key={idx}
+                        className={
+                          part.added
+                            ? 'rw-diff-added'
+                            : part.removed
+                              ? 'rw-diff-removed'
+                              : ''
+                        }
+                      >
+                        {part.value}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rw-popover__result">{resultText}</div>
+                )}
+                {/* Actions overlaid on result box */}
+                <div className="rw-popover__result-tools">
+                  <button
+                    type="button"
+                    className={`rw-popover__diff-btn ${showDiff ? 'rw-popover__diff-btn--active' : ''}`}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setShowDiff(!showDiff)}
+                    title="Toggle Text Diff"
+                  >
+                    <DiffIcon size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    className="rw-popover__result-copy"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={handleCopy}
+                    aria-label={copied ? 'Copied!' : 'Copy result'}
+                    title={copied ? 'Copied!' : 'Copy result'}
+                  >
+                    {copied ? <CheckIcon size={12} /> : <CopyIcon size={12} />}
+                  </button>
+                </div>
               </div>
               <div className="rw-popover__actions">
                 <button
@@ -695,6 +764,7 @@ export default function RewriteWidget({ hostElement }: Props) {
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     setCopied(false);
+                    setShowDiff(false);
                     setStage('presets');
                   }}
                 >

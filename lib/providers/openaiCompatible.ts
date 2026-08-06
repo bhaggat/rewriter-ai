@@ -63,8 +63,8 @@ export function createOpenAICompatibleClient(config: OpenAICompatibleConfig): Pr
 
   return {
     chat,
-    rewrite: (apiKey, model, text, instruction) =>
-      chat(apiKey, model, buildRewriteMessages(text, instruction)),
+    rewrite: (apiKey, model, text, instruction, deepPolish) =>
+      chat(apiKey, model, buildRewriteMessages(text, instruction, deepPolish)),
     validateKey,
   };
 }
