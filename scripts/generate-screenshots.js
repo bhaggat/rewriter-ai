@@ -44,7 +44,7 @@ async function generateAllAssets() {
   await page.setViewport({
     width: 1280,
     height: 800,
-    deviceScaleFactor: 2,
+    deviceScaleFactor: 1,
   });
 
   // Exact theme variables matching assets/theme.css
@@ -1389,7 +1389,7 @@ async function generateAllAssets() {
   // PROMO BANNERS
   // ---------------------------------------------------------------------------
   console.log('Generating Marquee Banner: marquee-promo-1400x560.png...');
-  await page.setViewport({ width: 1400, height: 560, deviceScaleFactor: 2 });
+  await page.setViewport({ width: 1400, height: 560, deviceScaleFactor: 1 });
   const htmlMarquee = `
     <!DOCTYPE html>
     <html>
@@ -1559,7 +1559,7 @@ async function generateAllAssets() {
   await page.screenshot({ path: path.join(chromePromoDir, 'marquee-promo-1400x560.png') });
 
   console.log('Generating Store Promo Tile: promo-tile-440x280.png...');
-  await page.setViewport({ width: 440, height: 280, deviceScaleFactor: 2 });
+  await page.setViewport({ width: 440, height: 280, deviceScaleFactor: 1 });
   const htmlSmallPromo = `
     <!DOCTYPE html>
     <html>
