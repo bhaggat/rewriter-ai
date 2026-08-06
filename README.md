@@ -36,13 +36,13 @@
 
 ## 📸 Preview & Screenshots
 
-| 🪄 Inline Rewrite & Presets | ✨ Instant Replacement & Actions |
+| 🪄 Instant Inline AI Rewriter | ✨ 1-Click Text Replace |
 | :---: | :---: |
-| ![Inline Presets](store-assets/screenshots/1-inline-rewrite-presets.png) | ![Inline Result](store-assets/screenshots/2-inline-rewrite-result.png) |
+| ![Inline Presets](chrome-store-assets/screenshots/1-instant-inline-rewriter.png) | ![Inline Result](chrome-store-assets/screenshots/2-one-click-text-replace.png) |
 
-| ⚙️ Multi-Provider BYOK Settings | 📝 Custom Style Presets Management |
+| ⚙️ Multi-Provider BYOK Settings | 📝 Custom Tone Presets Management |
 | :---: | :---: |
-| ![Provider Keys](store-assets/screenshots/3-options-api-keys.png) | ![Custom Presets](store-assets/screenshots/4-options-presets.png) |
+| ![Provider Keys](chrome-store-assets/screenshots/3-multi-llm-models.png) | ![Custom Presets](chrome-store-assets/screenshots/5-custom-tone-presets.png) |
 
 ---
 

@@ -7,39 +7,34 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 
 // Output directories
-const storeDir = path.join(rootDir, 'store-assets', 'screenshots');
-const storePromoDir = path.join(rootDir, 'store-assets');
 const chromeStoreDir = path.join(rootDir, 'chrome-store-assets', 'screenshots');
 const chromePromoDir = path.join(rootDir, 'chrome-store-assets', 'promo');
 const siteDir = path.join(rootDir, 'site-assets');
 
-[storeDir, storePromoDir, chromeStoreDir, chromePromoDir, siteDir].forEach((dir) => {
+[chromeStoreDir, chromePromoDir, siteDir].forEach((dir) => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Official Rewriter AI App Logo SVG (Blue Gradient #3b82f6 -> #1d4ed8 with Pen & Star)
-const APP_LOGO_SVG = (size = 32) => `
-<svg width="${size}" height="${size}" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="app-logo-bg-${size}" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#3b82f6"/>
-      <stop offset="1" stop-color="#1d4ed8"/>
-    </linearGradient>
-  </defs>
-  <rect width="128" height="128" rx="28" ry="28" fill="url(#app-logo-bg-${size})"/>
-  <g transform="translate(64,68) rotate(-45)">
-    <rect x="-38" y="-8" width="52" height="16" fill="#ffffff"/>
-    <path d="M14,-8 L14,8 L30,0 Z" fill="#ffffff"/>
-    <path d="M22,-4 L22,4 L30,0 Z" fill="#1e3a8a"/>
-  </g>
-  <path d="M103,40 L94.83,42.83 L92,51 L89.17,42.83 L81,40 L89.17,37.17 L92,29 L94.83,37.17 Z" fill="#ffffff"/>
-</svg>
+// Read official app logo PNG (128x128) and convert to base64 data URI for 100% exact rendering
+const iconPath = path.join(rootDir, 'public', 'icon', '128.png');
+let logoDataUri = '';
+
+if (fs.existsSync(iconPath)) {
+  const base64 = fs.readFileSync(iconPath).toString('base64');
+  logoDataUri = `data:image/png;base64,${base64}`;
+} else {
+  // Fallback SVG data URI if 128.png is missing
+  logoDataUri = `data:image/svg+xml;utf8,<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="%233b82f6"/><stop offset="1" stop-color="%231d4ed8"/></linearGradient></defs><rect width="128" height="128" rx="28" ry="28" fill="url(%23bg)"/><g transform="translate(64,68) rotate(-45)"><rect x="-38" y="-8" width="52" height="16" fill="%23ffffff"/><path d="M14,-8 L14,8 L30,0 Z" fill="%23ffffff"/><path d="M22,-4 L22,4 L30,0 Z" fill="%231e3a8a"/></g><path d="M103,40 L94.83,42.83 L92,51 L89.17,42.83 L81,40 L89.17,37.17 L92,29 L94.83,37.17 Z" fill="%23ffffff"/></svg>`;
+}
+
+const APP_LOGO_IMG = (size = 32, extraStyle = '') => `
+<img src="${logoDataUri}" width="${size}" height="${size}" style="border-radius: ${Math.round(size * 0.22)}px; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.45); object-fit: contain; flex-shrink: 0; ${extraStyle}" alt="Rewriter AI App Logo" />
 `;
 
 async function generateAllAssets() {
-  console.log('🚀 Launching Puppeteer for store screenshot generation with exact theme colors & official app logo...');
+  console.log('🚀 Launching Puppeteer for store asset generation with official app logo & theme colors...');
   const browser = await puppeteer.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -49,11 +44,10 @@ async function generateAllAssets() {
   await page.setViewport({
     width: 1280,
     height: 800,
-    deviceScaleFactor: 2, // 2x Retina resolution for crisp rendering
+    deviceScaleFactor: 2,
   });
 
-  // Theme matching theme.css variables:
-  // --bg: #121118; --surface: #17151f; --surface-raised: #1d1b27; --border: #2b2937; --accent: #a78bfa; --accent-strong: #8b5cf6
+  // Exact theme variables matching assets/theme.css
   const baseCss = `
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
@@ -71,7 +65,6 @@ async function generateAllAssets() {
       --accent-strong: #8b5cf6;
       --accent-blue: #3b82f6;
       --accent-emerald: #10b981;
-      --accent-pink: #ec4899;
       --glow: 0 0 20px rgba(167, 139, 250, 0.4);
       --sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --mono: 'JetBrains Mono', monospace;
@@ -101,7 +94,6 @@ async function generateAllAssets() {
       position: relative;
     }
 
-    /* Ambient Decorative Sparkles */
     .bg-sparkle {
       position: absolute;
       pointer-events: none;
@@ -111,7 +103,6 @@ async function generateAllAssets() {
     .sp-2 { top: 35px; right: 480px; font-size: 20px; color: rgba(59, 130, 246, 0.6); filter: drop-shadow(0 0 10px rgba(59,130,246,0.8)); }
     .sp-3 { bottom: 30px; left: 50px; font-size: 24px; color: rgba(16, 185, 129, 0.6); filter: drop-shadow(0 0 12px rgba(16,185,129,0.8)); }
 
-    /* Top Header Banner */
     .header-banner {
       width: 100%;
       display: flex;
@@ -205,7 +196,6 @@ async function generateAllAssets() {
       background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), var(--surface));
     }
 
-    /* Browser Frame Mockup */
     .browser-frame {
       width: 100%;
       flex: 1;
@@ -273,7 +263,6 @@ async function generateAllAssets() {
       overflow: hidden;
     }
 
-    /* Feature Callout Annotation */
     .feature-annotation {
       position: absolute;
       z-index: 200;
@@ -538,7 +527,7 @@ async function generateAllAssets() {
         <div class="header-left">
           <div class="header-badge">✨ Instant AI Text Rewriter</div>
           <div class="header-title">
-            ${APP_LOGO_SVG(28)}
+            ${APP_LOGO_IMG(28)}
             Rewriter AI — Polish & Rewrite Text Anywhere
           </div>
           <div class="header-subtitle">Highlight text in Gmail, LinkedIn, Slack, Twitter or Docs to change tone, fix grammar, or make concise</div>
@@ -584,7 +573,7 @@ async function generateAllAssets() {
             <div class="rw-popover">
               <div class="popover-head">
                 <div class="popover-title-group">
-                  ${APP_LOGO_SVG(20)}
+                  ${APP_LOGO_IMG(20)}
                   <span>REWRITER AI INLINE</span>
                 </div>
                 <span class="popover-badge">⚡ Gemini 1.5 Flash</span>
@@ -624,7 +613,6 @@ async function generateAllAssets() {
 
   await page.setContent(htmlScreen1, { waitUntil: 'domcontentloaded' });
   await delay(400);
-  await page.screenshot({ path: path.join(storeDir, '1-inline-rewrite-presets.png') });
   await page.screenshot({ path: path.join(chromeStoreDir, '1-instant-inline-rewriter.png') });
 
   // ---------------------------------------------------------------------------
@@ -813,7 +801,7 @@ async function generateAllAssets() {
         <div class="header-left">
           <div class="header-badge">⚡ Instant Text Replace</div>
           <div class="header-title">
-            ${APP_LOGO_SVG(28)}
+            ${APP_LOGO_IMG(28)}
             1-Click Text Replacement & Live AI Preview
           </div>
           <div class="header-subtitle">Directly swap original draft with polished AI text, copy to clipboard, or generate alternatives</div>
@@ -889,7 +877,6 @@ async function generateAllAssets() {
 
   await page.setContent(htmlScreen2, { waitUntil: 'domcontentloaded' });
   await delay(400);
-  await page.screenshot({ path: path.join(storeDir, '2-inline-rewrite-result.png') });
   await page.screenshot({ path: path.join(chromeStoreDir, '2-one-click-text-replace.png') });
   await page.screenshot({ path: path.join(siteDir, 'screenshot-hero.png') });
 
@@ -1052,7 +1039,7 @@ async function generateAllAssets() {
         <div class="header-left">
           <div class="header-badge">🔒 Privacy First & Bring Your Own Keys</div>
           <div class="header-title">
-            ${APP_LOGO_SVG(28)}
+            ${APP_LOGO_IMG(28)}
             Connect Any AI Provider — Zero Middleman Tracking
           </div>
           <div class="header-subtitle">Direct client-to-API requests. Keys remain encrypted locally in Chrome storage</div>
@@ -1079,7 +1066,7 @@ async function generateAllAssets() {
           <div class="options-container">
             <div class="opt-header">
               <div class="brand-title">
-                ${APP_LOGO_SVG(30)}
+                ${APP_LOGO_IMG(30)}
                 Rewriter AI Settings
               </div>
             </div>
@@ -1157,12 +1144,11 @@ async function generateAllAssets() {
 
   await page.setContent(htmlScreen3, { waitUntil: 'domcontentloaded' });
   await delay(400);
-  await page.screenshot({ path: path.join(storeDir, '3-options-api-keys.png') });
   await page.screenshot({ path: path.join(chromeStoreDir, '3-multi-llm-models.png') });
   await page.screenshot({ path: path.join(siteDir, 'screenshot-options.png') });
 
   // ---------------------------------------------------------------------------
-  // SCREENSHOT 4: Privacy & BYOK
+  // SCREENSHOT 4: Presets & Controls
   // ---------------------------------------------------------------------------
   console.log('Generating Screenshot 4: 4-options-presets.png...');
   const htmlScreen4 = `
@@ -1308,7 +1294,7 @@ async function generateAllAssets() {
         <div class="header-left">
           <div class="header-badge">⚙️ Tailored Tone Presets</div>
           <div class="header-title">
-            ${APP_LOGO_SVG(28)}
+            ${APP_LOGO_IMG(28)}
             Custom Tone Presets, Shortcuts & Control
           </div>
           <div class="header-subtitle">Build custom prompt templates to rewrite text for your specific workflow</div>
@@ -1335,7 +1321,7 @@ async function generateAllAssets() {
           <div class="options-container">
             <div class="opt-header">
               <div class="brand-title">
-                ${APP_LOGO_SVG(30)}
+                ${APP_LOGO_IMG(30)}
                 Presets & Floating Controls
               </div>
             </div>
@@ -1396,9 +1382,8 @@ async function generateAllAssets() {
 
   await page.setContent(htmlScreen4, { waitUntil: 'domcontentloaded' });
   await delay(400);
-  await page.screenshot({ path: path.join(storeDir, '4-options-presets.png') });
-  await page.screenshot({ path: path.join(chromeStoreDir, '5-custom-tone-presets.png') });
   await page.screenshot({ path: path.join(chromeStoreDir, '4-privacy-byok-security.png') });
+  await page.screenshot({ path: path.join(chromeStoreDir, '5-custom-tone-presets.png') });
 
   // ---------------------------------------------------------------------------
   // PROMO BANNERS
@@ -1426,7 +1411,7 @@ async function generateAllAssets() {
         .marquee-left {
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 18px;
           max-width: 620px;
         }
 
@@ -1447,19 +1432,32 @@ async function generateAllAssets() {
           box-shadow: 0 0 20px rgba(167, 139, 250, 0.4);
         }
 
-        .marquee-title {
-          font-size: 44px;
-          font-weight: 800;
-          line-height: 1.15;
-          letter-spacing: -0.03em;
-          color: #ffffff;
+        .marquee-title-row {
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 18px;
+        }
+
+        .marquee-brand {
+          font-size: 46px;
+          font-weight: 800;
+          color: #ffffff;
+          letter-spacing: -0.03em;
+          line-height: 1;
+        }
+
+        .marquee-headline {
+          font-size: 26px;
+          font-weight: 700;
+          line-height: 1.25;
+          color: #ddd6fe;
+          background: linear-gradient(135deg, #ffffff 0%, #ddd6fe 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
         }
 
         .marquee-subtitle {
-          font-size: 18px;
+          font-size: 16px;
           color: var(--fg-muted);
           line-height: 1.5;
           font-weight: 500;
@@ -1467,16 +1465,16 @@ async function generateAllAssets() {
 
         .marquee-pills {
           display: flex;
-          gap: 12px;
+          gap: 10px;
           flex-wrap: wrap;
         }
 
         .marquee-pill {
-          padding: 10px 18px;
+          padding: 9px 16px;
           border-radius: 12px;
           background: var(--surface);
           border: 1px solid var(--border-strong);
-          font-size: 13.5px;
+          font-size: 13px;
           font-weight: 700;
           color: #ffffff;
           display: flex;
@@ -1526,10 +1524,11 @@ async function generateAllAssets() {
     <body>
       <div class="marquee-left">
         <div class="marquee-badge">✦ Rewriter AI for Chrome</div>
-        <div class="marquee-title">
-          ${APP_LOGO_SVG(52)}
-          Instant AI Text Rewriter
+        <div class="marquee-title-row">
+          ${APP_LOGO_IMG(60)}
+          <div class="marquee-brand">Rewriter AI</div>
         </div>
+        <div class="marquee-headline">Instant AI Text Rewriter Across the Web</div>
         <div class="marquee-subtitle">Highlight text on Gmail, LinkedIn, Slack or Docs to polish tone, fix grammar, or make concise with Gemini, ChatGPT & Claude.</div>
         <div class="marquee-pills">
           <div class="marquee-pill purple">⚡ 1-Click Replace</div>
@@ -1540,11 +1539,11 @@ async function generateAllAssets() {
 
       <div class="marquee-right">
         <div class="card-head">
-          <div style="display:flex; align-items:center; gap:8px;">
-            ${APP_LOGO_SVG(22)}
+          <div style="display:flex; align-items:center; gap:10px;">
+            ${APP_LOGO_IMG(24)}
             <span>REWRITER AI INLINE WIDGET</span>
           </div>
-          <span style="background: rgba(16,185,129,0.2); color:#6ee7b7; padding:3px 10px; border-radius:100px; font-family:var(--mono);">⚡ Gemini 1.5 Flash</span>
+          <span style="background: rgba(16,185,129,0.2); color:#6ee7b7; padding:4px 12px; border-radius:100px; font-family:var(--mono); font-size:11.5px;">⚡ Gemini 1.5 Flash</span>
         </div>
         <div class="card-body">
           <div style="font-size: 12px; color: #a7f3d0; font-weight: 700; margin-bottom: 6px;">✨ 52% shorter • Professional Tone</div>
@@ -1642,7 +1641,7 @@ async function generateAllAssets() {
     </head>
     <body>
       <div class="promo-header">
-        ${APP_LOGO_SVG(44)}
+        ${APP_LOGO_IMG(44)}
         <div class="promo-title-group">
           <div class="promo-brand">Rewriter AI</div>
           <div class="promo-tag">Chrome Extension</div>
@@ -1663,11 +1662,10 @@ async function generateAllAssets() {
 
   await page.setContent(htmlSmallPromo, { waitUntil: 'domcontentloaded' });
   await delay(300);
-  await page.screenshot({ path: path.join(storePromoDir, 'promo-tile-440x280.png') });
   await page.screenshot({ path: path.join(chromePromoDir, 'small-promo-440x280.png') });
 
   await browser.close();
-  console.log('🎉 Successfully generated all store screenshots & promo tiles with exact theme & app logo!');
+  console.log('🎉 Successfully generated all store screenshots & promo tiles with official base64 app logo!');
 }
 
 generateAllAssets().catch((err) => {
