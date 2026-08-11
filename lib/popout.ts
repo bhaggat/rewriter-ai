@@ -1,7 +1,7 @@
-import { popoutWindowIdStorage } from '@/lib/storage';
+import { popoutWindowIdStorage } from "@/lib/storage";
 
-const POPOUT_WIDTH = 420;
-const POPOUT_HEIGHT = 640;
+const POPOUT_WIDTH = 480;
+const POPOUT_HEIGHT = 580;
 
 export async function focusExistingPopout(): Promise<boolean> {
   const id = await popoutWindowIdStorage.getValue();
@@ -18,8 +18,8 @@ export async function focusExistingPopout(): Promise<boolean> {
 
 export async function openPopout(): Promise<void> {
   const win = await browser.windows.create({
-    url: browser.runtime.getURL('/popup.html?detached=1'),
-    type: 'popup',
+    url: browser.runtime.getURL("/popup.html?detached=1"),
+    type: "popup",
     width: POPOUT_WIDTH,
     height: POPOUT_HEIGHT,
   });

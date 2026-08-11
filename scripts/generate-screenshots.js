@@ -394,6 +394,7 @@ async function generateAllAssets() {
           top: 92px;
           left: 175px;
           width: 480px;
+          max-width: 480px;
           background: rgba(23, 21, 31, 0.98);
           backdrop-filter: blur(24px);
           border: 1.5px solid var(--accent);
@@ -1489,7 +1490,8 @@ async function generateAllAssets() {
         }
 
         .marquee-right {
-          width: 580px;
+          width: 480px;
+          max-width: 480px;
           background: rgba(23, 21, 31, 0.92);
           border: 1.5px solid var(--accent);
           border-radius: 20px;

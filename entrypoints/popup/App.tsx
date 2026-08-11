@@ -1,37 +1,46 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 import {
   apiKeysStorage,
   hasAnyApiKey,
+  isSiteExcluded,
   settingsStorage,
   toggleSiteDenylist,
   type ApiKeys,
   type Settings,
-} from '@/lib/storage';
-import { getErrorMessage } from '@/lib/errors';
-import SetupView from './SetupView';
-import ChatView from './ChatView';
-import RewriteView from './RewriteView';
-import PopoutButton from './PopoutButton';
-import { GearIcon, PowerIcon } from '@/components/icons';
+} from "@/lib/storage";
+import { getErrorMessage } from "@/lib/errors";
+import SetupView from "./SetupView";
+import ChatView from "./ChatView";
+import RewriteView from "./RewriteView";
+import OptionsView from "@/entrypoints/options/App";
+import PopoutButton from "./PopoutButton";
+import { GearIcon, PowerIcon } from "@/components/icons";
 
 interface Props {
   detached?: boolean;
 }
 
-type Tab = 'rewrite' | 'chat';
+type Tab = "rewrite" | "chat" | "settings";
 
 export default function App({ detached = false }: Props) {
   const [apiKeys, setApiKeys] = useState<ApiKeys | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>('rewrite');
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>("rewrite");
+  const [previousTab, setPreviousTab] = useState<Tab>("rewrite");
   const [hostname, setHostname] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    apiKeysStorage
-      .getValue()
-      .then(setApiKeys)
-      .catch((err) => setLoadError(getErrorMessage(err, 'Could not load your saved settings.')));
+    Promise.all([apiKeysStorage.getValue(), settingsStorage.getValue()])
+      .then(([keys, loadedSettings]) => {
+        setApiKeys(keys);
+        setSettings(loadedSettings);
+      })
+      .catch((err) =>
+        setLoadError(
+          getErrorMessage(err, "Could not load settings. Please try again."),
+        ),
+      );
   }, []);
 
   function retry() {
@@ -41,26 +50,27 @@ export default function App({ detached = false }: Props) {
 
   useEffect(() => {
     load();
-    const unwatchApiKeys = apiKeysStorage.watch((next) => setApiKeys(next));
-    const unwatchSettings = settingsStorage.watch((next) => setSettings(next));
-    settingsStorage.getValue().then(setSettings);
-
-    browser.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-      if (!tab?.url) return;
-      try {
-        setHostname(new URL(tab.url).hostname);
-      } catch {
-        // Non-http tab (e.g. chrome:// or file://) — no hostname to exclude.
-      }
-    });
-
-    return () => {
-      unwatchApiKeys();
-      unwatchSettings();
-    };
+    return settingsStorage.watch(setSettings);
   }, [load]);
 
-  async function handleToggleSiteExclusion() {
+  useEffect(() => {
+    browser.tabs
+      .query({ active: true, currentWindow: true })
+      .then(([tab]) => {
+        if (!tab?.url) return;
+        try {
+          const u = new URL(tab.url);
+          if (u.protocol === "http:" || u.protocol === "https:") {
+            setHostname(u.hostname);
+          }
+        } catch {
+          setHostname(null);
+        }
+      })
+      .catch(() => setHostname(null));
+  }, []);
+
+  async function toggleSiteExclusion() {
     if (!settings || !hostname) return;
     const next: Settings = {
       ...settings,
@@ -68,6 +78,22 @@ export default function App({ detached = false }: Props) {
     };
     setSettings(next);
     await settingsStorage.setValue(next);
+  }
+
+  function handleTabChange(tab: Tab) {
+    if (tab !== "settings") {
+      setPreviousTab(tab);
+    }
+    setActiveTab(tab);
+  }
+
+  function toggleSettings() {
+    if (activeTab === "settings") {
+      setActiveTab(previousTab);
+    } else {
+      setPreviousTab(activeTab);
+      setActiveTab("settings");
+    }
   }
 
   if (loadError) {
@@ -86,30 +112,38 @@ export default function App({ detached = false }: Props) {
   }
 
   const hasKeys = hasAnyApiKey(apiKeys);
-  const siteExcluded = Boolean(hostname && settings?.siteDenylist.includes(hostname));
+  const siteExcluded = isSiteExcluded(settings?.siteDenylist, hostname);
 
   return (
-    <div className={`popup${detached ? '' : ' popup--with-popout'}`}>
+    <div className={`popup${detached ? "" : " popup--with-popout"}`}>
       {hasKeys ? (
         <>
           {/* Header */}
           <div className="popup__header">
-            <div className="popup__tabs" role="tablist" aria-label="Rewriter AI modes">
+            <div
+              className="popup__tabs"
+              role="tablist"
+              aria-label="Rewriter AI modes"
+            >
               <button
                 type="button"
                 role="tab"
-                aria-selected={activeTab === 'rewrite'}
-                className={`popup__tab${activeTab === 'rewrite' ? ' popup__tab--active' : ''}`}
-                onClick={() => setActiveTab('rewrite')}
+                aria-selected={activeTab === "rewrite"}
+                className={`popup__tab${activeTab === "rewrite" ? " popup__tab--active" : ""}`}
+                onClick={() => handleTabChange("rewrite")}
+                data-tooltip="Switch to inline rewriter mode"
+                data-tooltip-pos="bottom-right"
               >
                 ✦ Rewrite
               </button>
               <button
                 type="button"
                 role="tab"
-                aria-selected={activeTab === 'chat'}
-                className={`popup__tab${activeTab === 'chat' ? ' popup__tab--active' : ''}`}
-                onClick={() => setActiveTab('chat')}
+                aria-selected={activeTab === "chat"}
+                className={`popup__tab${activeTab === "chat" ? " popup__tab--active" : ""}`}
+                onClick={() => handleTabChange("chat")}
+                data-tooltip="Switch to AI chat mode"
+                data-tooltip-pos="bottom-right"
               >
                 Chat
               </button>
@@ -119,9 +153,14 @@ export default function App({ detached = false }: Props) {
               {hostname && (
                 <button
                   type="button"
-                  className={`header-icon-btn${siteExcluded ? ' header-icon-btn--off' : ' header-icon-btn--on'}`}
-                  onClick={handleToggleSiteExclusion}
-                  title={siteExcluded ? `Enable rewriter on ${hostname}` : `Disable rewriter on ${hostname}`}
+                  className={`header-icon-btn${siteExcluded ? " header-icon-btn--off" : " header-icon-btn--on"}`}
+                  onClick={toggleSiteExclusion}
+                  data-tooltip={
+                    siteExcluded
+                      ? `Enable rewriter on ${hostname}`
+                      : `Disable rewriter on ${hostname}`
+                  }
+                  data-tooltip-pos="bottom-left"
                   aria-label={
                     siteExcluded
                       ? `Enable rewriter on ${hostname}`
@@ -133,10 +172,11 @@ export default function App({ detached = false }: Props) {
               )}
               <button
                 type="button"
-                className="header-icon-btn"
-                title="Settings"
-                aria-label="Settings"
-                onClick={() => browser.runtime.openOptionsPage()}
+                className={`header-icon-btn${activeTab === "settings" ? " header-icon-btn--on" : ""}`}
+                data-tooltip="Extension settings & preferences"
+                data-tooltip-pos="bottom-left"
+                aria-label="Extension settings & preferences"
+                onClick={toggleSettings}
               >
                 <GearIcon size={14} />
               </button>
@@ -144,10 +184,14 @@ export default function App({ detached = false }: Props) {
             </div>
           </div>
 
-          {activeTab === 'rewrite' ? (
+          {activeTab === "rewrite" ? (
             <RewriteView apiKeys={apiKeys} />
-          ) : (
+          ) : activeTab === "chat" ? (
             <ChatView apiKeys={apiKeys} />
+          ) : (
+            <div className="popup__options-wrapper">
+              <OptionsView embedded />
+            </div>
           )}
         </>
       ) : (

@@ -43,7 +43,7 @@ export default function AboutModal({ isOpen, onClose }: Props) {
             className="about-modal-close"
             onClick={onClose}
             aria-label="Close guide"
-            title="Close"
+            data-tooltip="Close"
           >
             <CloseIcon size={16} />
           </button>
@@ -133,6 +133,7 @@ export default function AboutModal({ isOpen, onClose }: Props) {
         </div>
 
         <div className="about-modal-footer">
+          <span className="about-modal-version">Rewriter AI v{browser.runtime?.getManifest?.()?.version ?? '1.1.4'}</span>
           <button type="button" className="about-modal-primary-btn" onClick={onClose}>
             Got it
           </button>

@@ -14,6 +14,7 @@ export default function ErrorBanner({ message, onDismiss }: Props) {
           type="button"
           className="error-banner__dismiss"
           onClick={onDismiss}
+          data-tooltip="Dismiss error"
           aria-label="Dismiss error"
         >
           <CloseIcon size={12} />

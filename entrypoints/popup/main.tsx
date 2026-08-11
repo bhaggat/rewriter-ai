@@ -6,6 +6,9 @@ import App from './App';
 import './style.css';
 
 const detached = new URLSearchParams(window.location.search).has('detached');
+if (detached) {
+  document.documentElement.classList.add('detached');
+}
 
 async function bootstrap() {
   if (!detached) {

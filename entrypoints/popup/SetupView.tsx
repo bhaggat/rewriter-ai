@@ -50,58 +50,73 @@ export default function SetupView({ onDone }: Props) {
 
   return (
     <div className="setup">
-      <div className="setup__header">
-        <div className="setup__header-left">
-          <img src="/icon/32.png" alt="" className="setup__logo" />
-          <h1>Welcome to Rewriter AI</h1>
+      <div className="setup__scroll-area">
+        <div className="setup__header">
+          <div className="setup__header-left">
+            <img src="/icon/32.png" alt="" className="setup__logo" />
+            <h1>Welcome to Rewriter AI</h1>
+          </div>
+          <button
+            type="button"
+            className="setup__info-btn"
+            onClick={() => setShowInfo(true)}
+            data-tooltip="About Rewriter AI & Features"
+            data-tooltip-pos="bottom-left"
+            aria-label="About Rewriter AI & Features"
+          >
+            <HelpIcon size={16} />
+          </button>
         </div>
-        <button
-          type="button"
-          className="setup__info-btn"
-          onClick={() => setShowInfo(true)}
-          title="About Rewriter AI & Features"
-          aria-label="About Rewriter AI & Features"
-        >
-          <HelpIcon size={16} />
+        <p>Add at least one API key to get started. Keys are stored only on this device.</p>
+
+        {PROVIDERS.map((provider) => (
+          <div className="setup__provider" key={provider}>
+            <div className="setup__provider-header">
+              <ApiKeyLabel provider={provider} htmlFor={`key-${provider}`} />
+            </div>
+            <div className="setup__key-row">
+              <input
+                id={`key-${provider}`}
+                type="password"
+                autoComplete="off"
+                placeholder="Paste API key (optional)"
+                value={keys[provider] ?? ''}
+                onChange={(e) => setKeys((prev) => ({ ...prev, [provider]: e.target.value }))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const btn = e.currentTarget.parentElement?.querySelector('.validate-key__button') as HTMLButtonElement | null;
+                    btn?.click();
+                  }
+                }}
+              />
+              <ValidateKeyButton provider={provider} apiKey={keys[provider] ?? ''} />
+            </div>
+            <div className="setup__provider-divider" />
+            <div className="setup__model-row">
+              <label htmlFor={`model-${provider}`}>Default model</label>
+              <select
+                id={`model-${provider}`}
+                value={models[provider]}
+                onChange={(e) => setModels((prev) => ({ ...prev, [provider]: e.target.value }))}
+              >
+                {MODELS[provider].map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="setup__footer">
+        {error && <p className="setup__error">{error}</p>}
+        <button type="button" className="setup__submit-btn" disabled={!canSave || saving} onClick={handleSave}>
+          {saving ? 'Saving…' : 'Save and start chatting'}
         </button>
       </div>
-      <p>Add at least one API key to get started. Keys are stored only on this device.</p>
-
-
-      {PROVIDERS.map((provider) => (
-        <div className="setup__provider" key={provider}>
-          <ApiKeyLabel provider={provider} htmlFor={`key-${provider}`} />
-          <div className="setup__key-row">
-            <input
-              id={`key-${provider}`}
-              type="password"
-              autoComplete="off"
-              placeholder="Paste API key (optional)"
-              value={keys[provider] ?? ''}
-              onChange={(e) => setKeys((prev) => ({ ...prev, [provider]: e.target.value }))}
-            />
-            <ValidateKeyButton provider={provider} apiKey={keys[provider] ?? ''} />
-          </div>
-          <label htmlFor={`model-${provider}`}>Default model</label>
-          <select
-            id={`model-${provider}`}
-            value={models[provider]}
-            onChange={(e) => setModels((prev) => ({ ...prev, [provider]: e.target.value }))}
-          >
-            {MODELS[provider].map((model) => (
-              <option key={model.id} value={model.id}>
-                {model.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      ))}
-
-      {error && <p className="setup__error">{error}</p>}
-
-      <button type="button" disabled={!canSave || saving} onClick={handleSave}>
-        {saving ? 'Saving…' : 'Save and start chatting'}
-      </button>
 
       <AboutModal isOpen={showInfo} onClose={() => setShowInfo(false)} />
     </div>

@@ -35,42 +35,56 @@ async function handleRequest(message: BackgroundRequest): Promise<BackgroundResp
   }
 }
 
-async function setupContextMenus() {
-  if (typeof browser === 'undefined' || !browser.contextMenus) return;
-  try {
-    await browser.contextMenus.removeAll();
-    await browser.contextMenus.create({
-      id: 'rewrite-root',
-      title: 'Rewrite with AI',
-      contexts: ['editable', 'selection'],
-    });
-    await browser.contextMenus.create({
-      id: 'rewrite-open-widget',
-      parentId: 'rewrite-root',
-      title: 'Open Rewriter Widget…',
-      contexts: ['editable', 'selection'],
-    });
-    await browser.contextMenus.create({
-      id: 'rewrite-separator',
-      parentId: 'rewrite-root',
-      type: 'separator',
-      contexts: ['editable', 'selection'],
-    });
+let contextMenuQueue: Promise<void> = Promise.resolve();
 
-    const presets = await presetsStorage.getValue().catch(() => DEFAULT_PRESETS);
-    for (const preset of presets) {
-      if (preset.label.trim() && preset.instruction.trim()) {
+function setupContextMenus(): Promise<void> {
+  contextMenuQueue = contextMenuQueue
+    .then(async () => {
+      if (typeof browser === 'undefined' || !browser.contextMenus) return;
+      try {
+        await browser.contextMenus.removeAll();
         await browser.contextMenus.create({
-          id: `rewrite-preset-${preset.id}`,
-          parentId: 'rewrite-root',
-          title: preset.label,
+          id: 'rewrite-root',
+          title: 'Rewrite with AI',
           contexts: ['editable', 'selection'],
         });
+        await browser.contextMenus.create({
+          id: 'rewrite-open-widget',
+          parentId: 'rewrite-root',
+          title: 'Open Rewriter Widget…',
+          contexts: ['editable', 'selection'],
+        });
+        await browser.contextMenus.create({
+          id: 'rewrite-separator',
+          parentId: 'rewrite-root',
+          type: 'separator',
+          contexts: ['editable', 'selection'],
+        });
+
+        const presets = await presetsStorage.getValue().catch(() => DEFAULT_PRESETS);
+        const createdIds = new Set<string>();
+
+        for (const preset of presets) {
+          if (preset.label.trim() && preset.instruction.trim()) {
+            const menuId = `rewrite-preset-${preset.id}`;
+            if (!createdIds.has(menuId)) {
+              createdIds.add(menuId);
+              await browser.contextMenus.create({
+                id: menuId,
+                parentId: 'rewrite-root',
+                title: preset.label,
+                contexts: ['editable', 'selection'],
+              });
+            }
+          }
+        }
+      } catch {
+        // Ignore error if contextMenus permission is not available or supported
       }
-    }
-  } catch {
-    // Ignore error if contextMenus permission is not available or supported
-  }
+    })
+    .catch(() => {});
+
+  return contextMenuQueue;
 }
 
 export default defineBackground(() => {
@@ -81,7 +95,6 @@ export default defineBackground(() => {
   browser.runtime.onInstalled?.addListener(() => {
     setupContextMenus();
   });
-  setupContextMenus();
 
   presetsStorage.watch(() => {
     setupContextMenus();

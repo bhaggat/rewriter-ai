@@ -25,7 +25,7 @@ export default function HistoryList({
   return (
     <div className="history">
       <div className="history__toolbar">
-        <button type="button" className="icon-btn" onClick={onBack} title="Back" aria-label="Back">
+        <button type="button" className="icon-btn" onClick={onBack} data-tooltip="Back" aria-label="Back">
           <ArrowLeftIcon />
         </button>
         <h2>History</h2>
@@ -42,7 +42,7 @@ export default function HistoryList({
             <button
               type="button"
               className="history__delete"
-              title={`Delete ${c.title}`}
+              data-tooltip={`Delete ${c.title}`}
               aria-label={`Delete ${c.title}`}
               onClick={() => onDelete(c.id)}
             >

@@ -182,4 +182,162 @@ export function EraserIcon({ size = 14, className }: IconProps) {
   );
 }
 
+export function RefreshIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9L14 6" {...common} />
+      <path d="M14 2.5V6h-3.5" {...common} />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M4 6l4 4 4-4" {...common} />
+    </svg>
+  );
+}
+
+export function ExternalLinkIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M6 3h7v7M13 3L6 10" {...common} />
+      <path d="M10 9v4H3V6h4" {...common} />
+    </svg>
+  );
+}
+
+export function KeyboardIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <rect x="1.5" y="3.5" width="13" height="9" rx="1.5" {...common} />
+      <path d="M4 6h.01M7.5 6h.01M11 6h.01M4 8.5h.01M7.5 8.5h.01M11 8.5h.01M5 10.5h6" {...common} strokeWidth={1.75} />
+    </svg>
+  );
+}
+
+export function KeyCheckIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M9.5 2.5a3.5 3.5 0 0 0-3.4 4.3L1.5 11.5v3h3l1-1h1l1-1v-1l1.2-1.2a3.5 3.5 0 1 0 1.8-6.8z" {...common} />
+      <circle cx="11.5" cy="4.5" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function ArrowUpIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M8 13V3M4 7l4-4 4 4" {...common} />
+    </svg>
+  );
+}
+
+export function ArrowDownIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M8 3v10M4 9l4 4 4-4" {...common} />
+    </svg>
+  );
+}
+
+export function SpinnerIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={`options__spinner ${className || ''}`} aria-hidden="true">
+      <path d="M8 2a6 6 0 1 0 6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function SendIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M14 2L7.5 8.5" {...common} />
+      <path d="M14 2L9.5 14L7.5 8.5L2 6.5L14 2Z" {...common} />
+    </svg>
+  );
+}
+
+export function SplitViewIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <rect x="2" y="2.5" width="5.5" height="11" rx="1" {...common} />
+      <rect x="8.5" y="2.5" width="5.5" height="11" rx="1" {...common} />
+    </svg>
+  );
+}
+
+export function InlineViewIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <rect x="2" y="2.5" width="12" height="11" rx="1" {...common} />
+      <path d="M2 8h12" {...common} />
+    </svg>
+  );
+}
+
+export function GithubIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path
+        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+export function GlobeIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <circle cx="8" cy="8" r="6" {...common} />
+      <path d="M2 8h12M8 2a9 9 0 0 1 2.5 6 9 9 0 0 1-2.5 6 9 9 0 0 1-2.5-6A9 9 0 0 1 8 2z" {...common} />
+    </svg>
+  );
+}
+
+export function ShieldCheckIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M8 1.5L2.5 4v4.5c0 3.5 2.5 6 5.5 7 3-1 5.5-3.5 5.5-7V4L8 1.5z" {...common} />
+      <path d="M5.5 8l2 2 3-3.5" {...common} />
+    </svg>
+  );
+}
+
+export function HeartIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path
+        d="M8 13.5l-5.3-5a3.5 3.5 0 0 1 5-4.9L8 4.3l.3-.7a3.5 3.5 0 0 1 5 4.9L8 13.5z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+export function EyeIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" {...common} />
+      <circle cx="8" cy="8" r="2.2" {...common} />
+    </svg>
+  );
+}
+
+export function EyeOffIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} className={className} aria-hidden="true">
+      <path d="M2 2l12 12" {...common} />
+      <path d="M6.7 6.8a2.2 2.2 0 0 0 2.5 2.5" {...common} />
+      <path d="M4.5 4.6C2.8 5.7 1.5 7.5 1.5 8c0 .6 2 4.5 6.5 4.5 1.3 0 2.5-.4 3.5-1" {...common} />
+      <path d="M9 3.6c3 .8 5 3.4 5 4.4 0 .4-.5 1.3-1.4 2.2" {...common} />
+    </svg>
+  );
+}
+
+
+
+
 

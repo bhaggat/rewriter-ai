@@ -7,6 +7,7 @@ export type ApiKeys = Partial<Record<Provider, string>>;
 
 export interface Settings {
   autoDetectEnabled: boolean;
+  sideBarWidgetEnabled: boolean;
   siteDenylist: string[];
   defaultProvider: Provider;
   defaultModel: Record<Provider, string>;
@@ -40,10 +41,11 @@ export const apiKeysStorage = storage.defineItem<ApiKeys>('local:apiKeys', {
 export const settingsStorage = storage.defineItem<Settings>('local:settings', {
   fallback: {
     autoDetectEnabled: true,
+    sideBarWidgetEnabled: true,
     siteDenylist: [],
     defaultProvider: 'openai',
     defaultModel: { ...DEFAULT_MODEL },
-    defaultWritingStyle: '',
+    defaultWritingStyle: 'fix-grammar',
     defaultWritingStyleIsPreset: true,
   },
 });
@@ -64,6 +66,15 @@ export const lastWritingStyleStorage = storage.defineItem<string>('local:lastWri
   fallback: '',
 });
 
+export type CollapsibleSectionsState = Record<string, boolean>;
+
+export const collapsibleSectionsStorage = storage.defineItem<CollapsibleSectionsState>(
+  'local:collapsibleSectionsState',
+  {
+    fallback: {},
+  },
+);
+
 export function hasAnyApiKey(keys: ApiKeys): boolean {
   return PROVIDERS.some((provider) => Boolean(keys[provider]));
 }
@@ -78,14 +89,24 @@ export function getEffectiveProvider(
   return available.includes(preferred) ? preferred : available[0]!;
 }
 
-export function isSiteExcluded(denylist: string[], hostname: string): boolean {
-  return denylist.includes(hostname);
+export function isSiteExcluded(
+  denylist: string[] | undefined | null,
+  hostname: string | undefined | null,
+): boolean {
+  if (!denylist || !hostname) return false;
+  const lowerHost = hostname.toLowerCase();
+  return denylist.some((item) => {
+    const lowerItem = item.toLowerCase();
+    return lowerHost === lowerItem || lowerHost.endsWith(`.${lowerItem}`);
+  });
 }
 
 export function toggleSiteDenylist(denylist: string[], hostname: string): string[] {
-  return denylist.includes(hostname)
-    ? denylist.filter((h) => h !== hostname)
-    : [...denylist, hostname];
+  const lowerHost = hostname.toLowerCase();
+  const exists = denylist.some((h) => h.toLowerCase() === lowerHost);
+  return exists
+    ? denylist.filter((h) => h.toLowerCase() !== lowerHost)
+    : [...denylist, hostname.toLowerCase()];
 }
 
 export function createConversation(provider: Provider, model: string): Conversation {

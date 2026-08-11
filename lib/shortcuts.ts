@@ -67,7 +67,7 @@ export function openExtensionShortcuts(): void {
 export function useShortcutInfo(): ShortcutDetails & { openShortcutsPage: () => void } {
   const [details, setDetails] = useState<ShortcutDetails>(() => {
     const isMac = isMacPlatform();
-    const defaultShortcut = 'Alt+Shift+R';
+    const defaultShortcut = isMac ? 'Alt+G' : 'Alt+G';
     const parsed = parseShortcutKeys(defaultShortcut, isMac);
     return {
       shortcut: defaultShortcut,

@@ -14,7 +14,7 @@ import { MODELS, PROVIDER_LABELS, PROVIDERS } from '@/lib/models';
 import type { Provider } from '@/lib/providers/types';
 import type { BackgroundResponse, ChatRequest } from '@/lib/messaging';
 import { getErrorMessage } from '@/lib/errors';
-import { CheckIcon, CopyIcon, HistoryIcon, PlusIcon } from '@/components/icons';
+import { CheckIcon, CopyIcon, HistoryIcon, PlusIcon, SendIcon } from '@/components/icons';
 import HistoryList from './HistoryList';
 
 interface Props {
@@ -255,7 +255,8 @@ export default function ChatView({ apiKeys }: Props) {
             type="button"
             className="icon-btn"
             onClick={handleNewChat}
-            title="New chat"
+            data-tooltip="New chat"
+            data-tooltip-pos="bottom-left"
             aria-label="New chat"
           >
             <PlusIcon size={14} />
@@ -264,7 +265,8 @@ export default function ChatView({ apiKeys }: Props) {
             type="button"
             className="icon-btn"
             onClick={() => setView('history')}
-            title="History"
+            data-tooltip="History"
+            data-tooltip-pos="bottom-left"
             aria-label="History"
           >
             <HistoryIcon size={14} />
@@ -282,7 +284,7 @@ export default function ChatView({ apiKeys }: Props) {
             <button
               type="button"
               className="chat__bubble-copy"
-              title="Copy message"
+              data-tooltip="Copy message"
               aria-label="Copy message"
               onClick={() => handleCopy(index, message.content)}
             >
@@ -313,8 +315,14 @@ export default function ChatView({ apiKeys }: Props) {
           placeholder="Message…"
           rows={2}
         />
-        <button type="button" onClick={handleSend} disabled={sending || !input.trim()}>
-          Send
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={sending || !input.trim()}
+          data-tooltip="Send message"
+          aria-label="Send message"
+        >
+          <SendIcon size={14} />
         </button>
       </div>
     </div>

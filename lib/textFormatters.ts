@@ -109,48 +109,114 @@ export function cleanWhitespace(text: string): string {
     .trim();
 }
 
+export interface DiffStats {
+  addedWords: number;
+  removedWords: number;
+  unchangedWords: number;
+  similarity: number;
+}
+
 /**
- * Computes simple word-level diff between original and modified text.
+ * Calculates metrics (added words, removed words, similarity percentage) from diff parts.
+ */
+export function computeDiffStats(diffParts: DiffPart[]): DiffStats {
+  let addedWords = 0;
+  let removedWords = 0;
+  let unchangedWords = 0;
+
+  for (const part of diffParts) {
+    const wordCount = part.value.split(/\s+/).filter(Boolean).length;
+    if (part.added) {
+      addedWords += wordCount;
+    } else if (part.removed) {
+      removedWords += wordCount;
+    } else {
+      unchangedWords += wordCount;
+    }
+  }
+
+  const denominator = Math.max(unchangedWords + addedWords, unchangedWords + removedWords);
+  const similarity = denominator > 0 ? Math.round((unchangedWords / denominator) * 100) : 100;
+
+  return { addedWords, removedWords, unchangedWords, similarity };
+}
+
+/**
+ * Reconstructs text based on diff parts and rejected part indices (for interactive cherry-picking).
+ */
+export function buildCherryPickedText(diffParts: DiffPart[], rejectedIndices: Set<number>): string {
+  return diffParts
+    .map((part, idx) => {
+      const isRejected = rejectedIndices.has(idx);
+      if (part.added) {
+        // Rejected additions are omitted
+        return isRejected ? '' : part.value;
+      }
+      if (part.removed) {
+        // Rejected removals are kept in original state
+        return isRejected ? part.value : '';
+      }
+      return part.value;
+    })
+    .join('');
+}
+
+function tokenize(text: string): string[] {
+  return text.match(/[\w']+|[^\w\s]+|\s+/g) || [];
+}
+
+/**
+ * Computes word and punctuation level diff between original and modified text.
  */
 export function computeTextDiff(original: string, modified: string): DiffPart[] {
-  const origWords = original.split(/(\s+)/);
-  const modWords = modified.split(/(\s+)/);
+  const origTokens = tokenize(original);
+  const modTokens = tokenize(modified);
 
-  const lcs = getLCS(origWords, modWords);
-  const result: DiffPart[] = [];
+  const lcs = getLCS(origTokens, modTokens);
+  const rawParts: DiffPart[] = [];
 
   let i = 0;
   let j = 0;
   let l = 0;
 
-  while (i < origWords.length || j < modWords.length) {
-    if (l < lcs.length && origWords[i] === lcs[l] && modWords[j] === lcs[l]) {
-      result.push({ value: origWords[i]! });
+  while (i < origTokens.length || j < modTokens.length) {
+    if (l < lcs.length && origTokens[i] === lcs[l] && modTokens[j] === lcs[l]) {
+      rawParts.push({ value: origTokens[i]! });
       i++;
       j++;
       l++;
     } else {
       let removedStr = '';
-      while (i < origWords.length && (l >= lcs.length || origWords[i] !== lcs[l])) {
-        removedStr += origWords[i];
+      while (i < origTokens.length && (l >= lcs.length || origTokens[i] !== lcs[l])) {
+        removedStr += origTokens[i];
         i++;
       }
       if (removedStr) {
-        result.push({ value: removedStr, removed: true });
+        rawParts.push({ value: removedStr, removed: true });
       }
 
       let addedStr = '';
-      while (j < modWords.length && (l >= lcs.length || modWords[j] !== lcs[l])) {
-        addedStr += modWords[j];
+      while (j < modTokens.length && (l >= lcs.length || modTokens[j] !== lcs[l])) {
+        addedStr += modTokens[j];
         j++;
       }
       if (addedStr) {
-        result.push({ value: addedStr, added: true });
+        rawParts.push({ value: addedStr, added: true });
       }
     }
   }
 
-  return result;
+  const mergedParts: DiffPart[] = [];
+  for (const part of rawParts) {
+    const last = mergedParts[mergedParts.length - 1];
+    if (last && Boolean(last.added) === Boolean(part.added) && Boolean(last.removed) === Boolean(part.removed)) {
+      last.value += part.value;
+    } else {
+      mergedParts.push({ ...part });
+    }
+  }
+
+  return mergedParts;
 }
 
 function getLCS(a: string[], b: string[]): string[] {
@@ -185,3 +251,4 @@ function getLCS(a: string[], b: string[]): string[] {
 
   return lcs;
 }
+

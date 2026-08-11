@@ -60,3 +60,20 @@ export const DEFAULT_PRESETS: RewritePreset[] = [
   },
 ];
 
+export function resolveInstruction(
+  settings: { defaultWritingStyle?: string; defaultWritingStyleIsPreset?: boolean } | null,
+  presets: RewritePreset[],
+): string {
+  const fixGrammar = presets.find((p) => p.id === 'fix-grammar') ?? DEFAULT_PRESETS[0]!;
+  if (!settings || !settings.defaultWritingStyle) {
+    return fixGrammar.instruction;
+  }
+
+  if (settings.defaultWritingStyleIsPreset) {
+    const preset = presets.find((p) => p.id === settings.defaultWritingStyle);
+    return preset?.instruction ?? fixGrammar.instruction;
+  }
+
+  return settings.defaultWritingStyle;
+}
+

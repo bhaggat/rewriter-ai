@@ -33,6 +33,14 @@ export default defineContentScript({
         // The container spans the full viewport (position: modal); only our
         // own icon/popover elements should intercept pointer events.
         container.style.pointerEvents = 'none';
+        shadowHost.style.setProperty('z-index', '2147483647', 'important');
+        shadowHost.style.setProperty('position', 'fixed', 'important');
+        shadowHost.style.setProperty('top', '0', 'important');
+        shadowHost.style.setProperty('left', '0', 'important');
+        shadowHost.style.setProperty('width', '0', 'important');
+        shadowHost.style.setProperty('height', '0', 'important');
+        shadowHost.style.setProperty('overflow', 'visible', 'important');
+        shadowHost.style.setProperty('pointer-events', 'none', 'important');
         const root = createRoot(container);
         root.render(
           <ErrorBoundary className="rw-root rw-error-boundary">

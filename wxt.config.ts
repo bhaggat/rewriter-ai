@@ -19,6 +19,10 @@ export default defineConfig({
       128: 'icon/128.png',
     },
     permissions: ['storage', 'activeTab', 'contextMenus'],
+    options_ui: {
+      page: 'options.html',
+      open_in_tab: false,
+    },
     host_permissions: [
       'https://api.openai.com/*',
       'https://generativelanguage.googleapis.com/*',
@@ -29,10 +33,17 @@ export default defineConfig({
       'https://api.mistral.ai/*',
     ],
     commands: {
+      _execute_action: {
+        suggested_key: {
+          default: 'Ctrl+Shift+E',
+          mac: 'Command+Shift+E',
+        },
+        description: 'Open the extension popup',
+      },
       'trigger-rewrite': {
         suggested_key: {
-          default: 'Alt+Shift+R',
-          mac: 'Alt+Shift+R',
+          default: 'Alt+G',
+          mac: 'Alt+G',
         },
         description: 'Open the rewrite popover for the focused text field',
       },
