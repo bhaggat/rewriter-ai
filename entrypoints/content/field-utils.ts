@@ -1,3 +1,5 @@
+import { domToFormattedText, markdownToHtml } from "@/lib/textFormatters";
+
 export function isEditableField(
   target: EventTarget | null,
 ): target is HTMLElement {
@@ -12,7 +14,10 @@ export function isEditableField(
       (target as HTMLInputElement).type ||
       target.getAttribute("type") ||
       "text"
-    ).toLowerCase();
+    )
+      .toLowerCase()
+      .trim();
+
     const nonTextInputTypes = [
       "button",
       "submit",
@@ -24,8 +29,46 @@ export function isEditableField(
       "range",
       "color",
       "hidden",
+      "email",
+      "number",
+      "tel",
+      "password",
+      "url",
+      "search",
+      "date",
+      "datetime",
+      "datetime-local",
+      "month",
+      "week",
+      "time",
     ];
-    return !nonTextInputTypes.includes(type);
+
+    if (nonTextInputTypes.includes(type)) {
+      return false;
+    }
+
+    const inputMode = (target.getAttribute("inputmode") || "").toLowerCase().trim();
+    if (["numeric", "decimal", "tel", "email"].includes(inputMode)) {
+      return false;
+    }
+
+    const autocomplete = (target.getAttribute("autocomplete") || "").toLowerCase().trim();
+    if (
+      [
+        "email",
+        "tel",
+        "tel-national",
+        "tel-country-code",
+        "one-time-code",
+        "cc-number",
+        "cc-csc",
+        "postal-code",
+      ].includes(autocomplete)
+    ) {
+      return false;
+    }
+
+    return true;
   }
 
   const htmlEl = target as HTMLElement;
@@ -34,9 +77,17 @@ export function isEditableField(
   const attrCE = target.getAttribute("contenteditable");
   if (attrCE !== null && attrCE !== "false") return true;
 
-  const role = target.getAttribute("role");
-  if (role === "textbox" || role === "searchbox" || role === "combobox")
-    return true;
+  const role = (target.getAttribute("role") || "").toLowerCase().trim();
+  if (
+    role === "searchbox" ||
+    role === "search" ||
+    role === "spinbutton" ||
+    role === "slider"
+  ) {
+    return false;
+  }
+
+  if (role === "textbox" || role === "combobox") return true;
 
   if (
     target.hasAttribute("data-lexical-editor") ||
@@ -224,8 +275,10 @@ export function getFieldText(field: HTMLElement): string {
   }
 
   try {
+    const formatted = domToFormattedText(field);
+    if (formatted) return formatted;
+
     const clone = field.cloneNode(true) as HTMLElement;
-    // Extract emoji alt text from img tags (common in WhatsApp Web, Twitter, Slack)
     const imgs = clone.querySelectorAll("img");
     imgs.forEach((img) => {
       const alt =
@@ -236,7 +289,6 @@ export function getFieldText(field: HTMLElement): string {
     });
 
     const text = clone.innerText || clone.textContent || "";
-    // Strip zero-width control characters inserted by Lexical/Draft.js
     return text.replace(/\u200B|\u200C|\u200D|\uFEFF/g, "");
   } catch {
     const raw = field.innerText || field.textContent || "";
@@ -319,6 +371,8 @@ export function insertText(
     field instanceof HTMLTextAreaElement ||
     field instanceof HTMLInputElement;
 
+  const html = !isInput ? markdownToHtml(text) : "";
+
   if (isInput) {
     const inputEl = field as HTMLInputElement | HTMLTextAreaElement;
     if (activeSelection?.start != null && activeSelection.end != null) {
@@ -349,43 +403,80 @@ export function insertText(
 
   let inserted = false;
 
-  // 1. Try document.execCommand('insertText', false, text)
-  try {
-    inserted = document.execCommand("insertText", false, text);
-  } catch {
-    // Fall through
-  }
-
-  // 2. Try paste event fallback if execCommand was prevented or failed (vital for Lexical/WhatsApp Web)
-  if (!inserted || !isInput) {
+  if (!isInput && html) {
+    // 1. Try paste event with text/html & text/plain
     try {
       const dataTransfer = new DataTransfer();
       dataTransfer.setData("text/plain", text);
+      dataTransfer.setData("text/html", html);
       const pasteEvent = new ClipboardEvent("paste", {
         clipboardData: dataTransfer,
         bubbles: true,
         cancelable: true,
         composed: true,
       });
-      field.dispatchEvent(pasteEvent);
+      const defaultPrevented = !field.dispatchEvent(pasteEvent);
+      if (defaultPrevented) {
+        inserted = true;
+      }
     } catch {
       // Ignore ClipboardEvent error
     }
+
+    // 2. Try execCommand insertHTML if paste was not intercepted
+    if (!inserted) {
+      try {
+        inserted = document.execCommand("insertHTML", false, html);
+      } catch {
+        // Fall through
+      }
+    }
+
+    // 3. Try Range fragment insertion if execCommand insertHTML failed
+    if (!inserted && activeSelection?.range) {
+      try {
+        activeSelection.range.deleteContents();
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = html;
+        const frag = document.createDocumentFragment();
+        while (tempDiv.firstChild) {
+          frag.appendChild(tempDiv.firstChild);
+        }
+        activeSelection.range.insertNode(frag);
+        inserted = true;
+      } catch {
+        // Fall through
+      }
+    }
   }
 
-  // 3. Fallback direct DOM manipulation if standard browser commands fail
+  // Fallback 1: document.execCommand("insertText", false, text)
+  if (!inserted) {
+    try {
+      inserted = document.execCommand("insertText", false, text);
+    } catch {
+      // Fall through
+    }
+  }
+
+  // Fallback 2: Direct DOM insertion
   if (!inserted && !isInput) {
     try {
       if (activeSelection?.range) {
         activeSelection.range.deleteContents();
-        activeSelection.range.insertNode(document.createTextNode(text));
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = html || text;
+        const frag = document.createDocumentFragment();
+        while (tempDiv.firstChild) {
+          frag.appendChild(tempDiv.firstChild);
+        }
+        activeSelection.range.insertNode(frag);
       } else {
-        // Preserving paragraph hierarchy for WhatsApp Web / Lexical
         const paragraph = field.querySelector("p");
         if (paragraph) {
-          paragraph.textContent = text;
+          paragraph.innerHTML = html || text;
         } else {
-          field.textContent = text;
+          field.innerHTML = html || text;
         }
       }
     } catch {

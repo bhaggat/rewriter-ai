@@ -1,7 +1,7 @@
 {
   "name": "rewriter-ai",
   "private": true,
-  "version": "1.1.6",
+  "version": "1.1.7",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -19,6 +19,7 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "marked": "^18.0.10",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

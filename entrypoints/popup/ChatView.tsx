@@ -15,6 +15,7 @@ import type { Provider } from '@/lib/providers/types';
 import type { BackgroundResponse, ChatRequest } from '@/lib/messaging';
 import { getErrorMessage } from '@/lib/errors';
 import { CheckIcon, CopyIcon, HistoryIcon, PlusIcon, SendIcon } from '@/components/icons';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 import HistoryList from './HistoryList';
 
 interface Props {
@@ -280,7 +281,9 @@ export default function ChatView({ apiKeys }: Props) {
         )}
         {conversation?.messages.map((message, index) => (
           <div key={index} className={`chat__bubble chat__bubble--${message.role}`}>
-            <span className="chat__bubble-text">{message.content}</span>
+            <div className="chat__bubble-content">
+              <MarkdownRenderer content={message.content} />
+            </div>
             <button
               type="button"
               className="chat__bubble-copy"

@@ -34,6 +34,7 @@ import {
   TextCaseIcon,
   WandIcon,
 } from "@/components/icons";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 import {
   buildCherryPickedText,
   cleanWhitespace,
@@ -42,6 +43,7 @@ import {
   formatAsBulletList,
   formatAsNumberedList,
   getTextMetrics,
+  markdownToHtml,
   toTitleCase,
 } from "@/lib/textFormatters";
 
@@ -290,11 +292,29 @@ export default function RewriteView({ apiKeys }: Props) {
   // ── Copy ──────────────────────────────────────────────────────────────────
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(effectiveResult);
+      const html = markdownToHtml(effectiveResult);
+      if (typeof ClipboardItem !== "undefined" && navigator.clipboard.write) {
+        const textBlob = new Blob([effectiveResult], { type: "text/plain" });
+        const htmlBlob = new Blob([html], { type: "text/html" });
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/plain": textBlob,
+            "text/html": htmlBlob,
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(effectiveResult);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     } catch {
-      setError("Could not copy to clipboard.");
+      try {
+        await navigator.clipboard.writeText(effectiveResult);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      } catch {
+        setError("Could not copy to clipboard.");
+      }
     }
   }
 
@@ -742,7 +762,9 @@ export default function RewriteView({ apiKeys }: Props) {
               </div>
             )
           ) : (
-            <div className="rewrite__result-box">{result}</div>
+            <div className="rewrite__result-box">
+              <MarkdownRenderer content={result} />
+            </div>
           )}
 
           {showDiff && rejectedDiffIndices.size > 0 && (

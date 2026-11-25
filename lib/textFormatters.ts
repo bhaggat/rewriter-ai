@@ -1,3 +1,5 @@
+import { marked } from 'marked';
+
 export interface TextMetrics {
   words: number;
   characters: number;
@@ -95,6 +97,123 @@ export function formatAsMarkdownQuote(text: string): string {
     .split('\n')
     .map((line) => `> ${line}`)
     .join('\n');
+}
+
+/**
+ * Formats text with underline tags.
+ */
+export function formatAsUnderline(text: string): string {
+  if (text.startsWith("<u>") && text.endsWith("</u>")) {
+    return text.slice(3, -4);
+  }
+  return `<u>${text}</u>`;
+}
+
+/**
+ * Converts formatted text / Markdown to rich HTML suitable for contenteditable editors.
+ */
+export function markdownToHtml(text: string): string {
+  if (!text) return '';
+
+  let processed = text.replace(/<u>([\s\S]*?)<\/u>/gi, '<u>$1</u>');
+
+  try {
+    const html = marked.parse(processed, {
+      gfm: true,
+      breaks: true,
+      async: false,
+    }) as string;
+    return html.trim();
+  } catch {
+    return text.replace(/\n/g, '<br>');
+  }
+}
+
+/**
+ * Extracts rich text from a DOM element preserving formatting (lists, underlines, bold, italics, code blocks, newlines).
+ */
+export function domToFormattedText(element: HTMLElement): string {
+  if (!element) return "";
+
+  const clone = element.cloneNode(true) as HTMLElement;
+
+  // Replace images with alt text
+  const imgs = clone.querySelectorAll("img");
+  imgs.forEach((img) => {
+    const alt = img.getAttribute("alt") || img.getAttribute("data-plain-text") || "";
+    img.replaceWith(document.createTextNode(alt ? ` ${alt} ` : ""));
+  });
+
+  function processNode(node: Node): string {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return (node.nodeValue || "").replace(/\u200B|\u200C|\u200D|\uFEFF/gu, "");
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return "";
+    }
+
+    const el = node as HTMLElement;
+    const tag = el.tagName.toUpperCase();
+
+    if (tag === "BR") return "\n";
+
+    if (tag === "PRE" || tag === "CODE" || el.getAttribute("data-code-block") === "true") {
+      const codeText = el.innerText || el.textContent || "";
+      if (tag === "PRE" || codeText.includes("\n")) {
+        return `\n\`\`\`\n${codeText.trim()}\n\`\`\`\n`;
+      }
+      return `\`${codeText}\``;
+    }
+
+    let childrenText = "";
+    node.childNodes.forEach((child) => {
+      childrenText += processNode(child);
+    });
+
+    if (tag === "UL") {
+      const items: string[] = [];
+      el.querySelectorAll(":scope > li").forEach((li) => {
+        const itemTxt = processNode(li).trim();
+        if (itemTxt) items.push(`• ${itemTxt}`);
+      });
+      return items.length > 0 ? `\n${items.join("\n")}\n` : childrenText;
+    }
+
+    if (tag === "OL") {
+      const items: string[] = [];
+      el.querySelectorAll(":scope > li").forEach((li, idx) => {
+        const itemTxt = processNode(li).trim();
+        if (itemTxt) items.push(`${idx + 1}. ${itemTxt}`);
+      });
+      return items.length > 0 ? `\n${items.join("\n")}\n` : childrenText;
+    }
+
+    if (tag === "U" || tag === "INS" || el.style.textDecoration?.includes("underline")) {
+      return childrenText.trim() ? `<u>${childrenText}</u>` : childrenText;
+    }
+
+    if (tag === "B" || tag === "STRONG" || el.style.fontWeight === "bold" || parseInt(el.style.fontWeight, 10) >= 600) {
+      return childrenText.trim() ? `**${childrenText}**` : childrenText;
+    }
+
+    if (tag === "I" || tag === "EM" || el.style.fontStyle === "italic") {
+      return childrenText.trim() ? `*${childrenText}*` : childrenText;
+    }
+
+    if (tag === "P" || tag === "DIV" || tag === "TR" || tag === "H1" || tag === "H2" || tag === "H3" || tag === "H4" || tag === "H5" || tag === "H6") {
+      return `\n${childrenText}\n`;
+    }
+
+    return childrenText;
+  }
+
+  const result = processNode(clone);
+  // Normalize whitespace: trim multiple blank lines down to double newlines
+  return result
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 /**

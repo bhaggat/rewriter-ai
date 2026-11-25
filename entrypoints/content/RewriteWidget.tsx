@@ -38,10 +38,12 @@ import {
   SparklesIcon,
   SplitViewIcon,
 } from "@/components/icons";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 import {
   buildCherryPickedText,
   computeDiffStats,
   computeTextDiff,
+  markdownToHtml,
 } from "@/lib/textFormatters";
 
 const MIN_TEXT_LENGTH = 8;
@@ -269,7 +271,10 @@ export default function RewriteWidget({ hostElement }: Props) {
 
     function handleFocusIn(event: FocusEvent) {
       const target = findEditableField(event.target);
-      if (!target) return;
+      if (!target) {
+        if (stage === "idle") clearActiveField();
+        return;
+      }
 
       if (stage !== "idle") {
         if (target !== activeFieldRef.current) clearActiveField();
@@ -340,6 +345,15 @@ export default function RewriteWidget({ hostElement }: Props) {
         lastFieldRef.current = target;
         if (autoDetectEnabled && stage === "idle") {
           updateFieldTarget(target);
+        }
+      } else if (stage === "idle") {
+        const clickTarget = event.target as Node | null;
+        if (
+          clickTarget &&
+          !hostElement.contains(clickTarget) &&
+          !hostElement.shadowRoot?.contains(clickTarget)
+        ) {
+          clearActiveField();
         }
       }
     }
@@ -863,12 +877,30 @@ export default function RewriteWidget({ hostElement }: Props) {
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(effectiveText);
+      const html = markdownToHtml(effectiveText);
+      if (typeof ClipboardItem !== "undefined" && navigator.clipboard.write) {
+        const textBlob = new Blob([effectiveText], { type: "text/plain" });
+        const htmlBlob = new Blob([html], { type: "text/html" });
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/plain": textBlob,
+            "text/html": htmlBlob,
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(effectiveText);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     } catch {
-      setErrorText("Could not copy to clipboard.");
-      setStage("error");
+      try {
+        await navigator.clipboard.writeText(effectiveText);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      } catch {
+        setErrorText("Could not copy to clipboard.");
+        setStage("error");
+      }
     }
   }
 
@@ -1144,7 +1176,9 @@ export default function RewriteWidget({ hostElement }: Props) {
                     </div>
                   )
                 ) : (
-                  <div className="rw-popover__result">{resultText}</div>
+                  <div className="rw-popover__result">
+                    <MarkdownRenderer content={resultText} />
+                  </div>
                 )}
                 {/* Actions overlaid on result box */}
                 <div className="rw-popover__result-tools">
