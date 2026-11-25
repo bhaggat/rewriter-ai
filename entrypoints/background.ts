@@ -94,6 +94,18 @@ export default defineBackground(() => {
 
   browser.runtime.onInstalled?.addListener(() => {
     setupContextMenus();
+    browser.storage.local
+      .get('reviewPromptState')
+      .then((res) => {
+        const existing = res.reviewPromptState as { installedAt?: number } | undefined;
+        if (!existing?.installedAt) {
+          return browser.storage.local.set({
+            reviewPromptState: { installedAt: Date.now() },
+          });
+        }
+        return undefined;
+      })
+      .catch(() => {});
   });
 
   presetsStorage.watch(() => {

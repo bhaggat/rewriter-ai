@@ -14,6 +14,7 @@ import ChatView from "./ChatView";
 import RewriteView from "./RewriteView";
 import OptionsView from "@/entrypoints/options/App";
 import PopoutButton from "./PopoutButton";
+import ReviewPrompt from "./ReviewPrompt";
 import { GearIcon, PowerIcon } from "@/components/icons";
 
 interface Props {
@@ -193,6 +194,7 @@ export default function App({ detached = false }: Props) {
               <OptionsView embedded />
             </div>
           )}
+          {activeTab !== "settings" && <ReviewPrompt />}
         </>
       ) : (
         <SetupView onDone={setApiKeys} />
